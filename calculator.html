@@ -1,0 +1,415 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>开始测算 | 五行拍拍</title>
+    <meta
+      name="description"
+      content="进入五行拍拍开始测算页，按生日排盘或直接输入八字，查看四柱、十神、格局、大运与流年解读。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Huninn&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./static/styles.css?v=20260414f" />
+  </head>
+  <body>
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+    <div class="ambient ambient-c"></div>
+    <div class="ambient ambient-d"></div>
+    <div class="ambient ambient-e"></div>
+
+    <div class="page-shell">
+      <main class="calculator-page standalone-page">
+        <section class="page-topbar glow-card" aria-label="page navigation">
+          <a class="button ghost" href="./index.html">返回首页</a>
+          <div class="page-topbar-copy">
+            <h1>马上就拍拍！</h1>
+          </div>
+        </section>
+
+        <section class="calculator" id="calculator">
+          <div class="stacked-workspace">
+            <section class="panel form-panel glow-card">
+              <div class="panel-header">
+                <h3>命盘资料卡</h3>
+                <p class="soft-copy poetic-copy">理承气行，数从象见。先定其途，再入其盘。</p>
+              </div>
+
+              <div class="mode-switch" aria-label="calculation mode">
+                <button class="mode-tab is-active" type="button" data-mode-target="profile-mode">
+                  <strong>按生日排盘</strong>
+                  <small>适合知道出生日期的人，系统会自动排出四柱与大运。</small>
+                </button>
+                <button class="mode-tab" type="button" data-mode-target="bazi-mode">
+                  <strong>直接输入八字</strong>
+                  <small>适合已经有四柱的人，直接进入命盘阅读与流年分析。</small>
+                </button>
+              </div>
+
+              <div class="mode-panel is-active" id="profile-mode">
+                <div class="stepper" aria-label="steps">
+                  <button class="step is-active" type="button" data-step-target="0">1 基本信息</button>
+                  <button class="step" type="button" data-step-target="1">2 出生时空</button>
+                  <button class="step" type="button" data-step-target="2">3 阅读偏好</button>
+                </div>
+
+                <form id="bazi-form" class="wizard-form">
+                  <section class="step-panel is-active" data-step-panel="0">
+                    <label>
+                      <span>姓名</span>
+                      <input name="name" type="text" placeholder="例如：徐正…" autocomplete="name" required />
+                    </label>
+                    <label>
+                      <span>曾用名</span>
+                      <input name="formerName" type="text" placeholder="没有可留空…" autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>性别</span>
+                      <select name="gender" autocomplete="sex" required>
+                        <option value="female">女</option>
+                        <option value="male">男</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>是否在世</span>
+                      <select name="status" autocomplete="off" required>
+                        <option value="alive">在世</option>
+                        <option value="deceased">已故</option>
+                      </select>
+                    </label>
+                  </section>
+
+                  <section class="step-panel" data-step-panel="1">
+                    <p class="step-note">形分昼夜，气有浅深。知道准确时间就直接填写；如果不确定，也可以按十二时辰选一个最接近的时间段继续测算。</p>
+                    <label>
+                      <span>阳历生日</span>
+                      <input
+                        name="birthday"
+                        id="birthday-input"
+                        type="text"
+                        inputmode="numeric"
+                        placeholder="输入生日"
+                        autocomplete="bday"
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>出生时间</span>
+                      <input name="birthTime" id="birth-time-input" type="time" autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>时间模糊描述</span>
+                      <select name="timeRange" id="time-range-select" autocomplete="off">
+                        <option value="exact">已提供精确时间</option>
+                        <option value="late-zi">深夜 23:00-01:00</option>
+                        <option value="chou">凌晨 01:00-03:00</option>
+                        <option value="yin">黎明 03:00-05:00</option>
+                        <option value="mao">早晨 05:00-07:00</option>
+                        <option value="chen">早餐后 07:00-09:00</option>
+                        <option value="si">上午 09:00-11:00</option>
+                        <option value="wu">中午 11:00-13:00</option>
+                        <option value="wei">午后 13:00-15:00</option>
+                        <option value="shen">下午 15:00-17:00</option>
+                        <option value="you">傍晚 17:00-19:00</option>
+                        <option value="early-night">晚上 19:00-21:00</option>
+                        <option value="late-night">晚上 21:00-23:00</option>
+                        <option value="unknown">不确定</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>出生地</span>
+                      <input name="birthplace" type="text" placeholder="例如：上海市…" autocomplete="address-level2" required />
+                    </label>
+                    <label>
+                      <span>农历生日备注</span>
+                      <input name="lunarNote" type="text" placeholder="不知道可留空…" autocomplete="off" />
+                    </label>
+                  </section>
+
+                  <section class="step-panel" data-step-panel="2">
+                    <label>
+                      <span>优先想看</span>
+                      <select name="focus" autocomplete="off">
+                        <option value="overall">综合命盘</option>
+                        <option value="career">事业财运</option>
+                        <option value="relationship">感情婚姻</option>
+                        <option value="annual">年度流年</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>想看的时间范围</span>
+                      <select name="horizon" autocomplete="off">
+                        <option value="3">未来 3 年</option>
+                        <option value="5">未来 5 年</option>
+                        <option value="10">未来 10 年</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>补充说明</span>
+                      <textarea
+                        name="notes"
+                        rows="5"
+                        placeholder="例如：更想看工作节奏、关系状态、未来几年是否适合换环境…"
+                        autocomplete="off"
+                      ></textarea>
+                    </label>
+                  </section>
+
+                  <div class="form-actions">
+                    <button type="button" class="button ghost" id="prev-step">上一步</button>
+                    <div class="action-group">
+                      <button type="button" class="button secondary" id="next-step">下一步</button>
+                      <button type="submit" class="button primary" hidden>生成光晕命盘</button>
+                    </div>
+                  </div>
+                  <p class="form-feedback is-hidden" id="form-feedback" role="alert"></p>
+                </form>
+              </div>
+
+              <div class="mode-panel" id="bazi-mode">
+                <form id="bazi-direct-form" class="wizard-form">
+                  <label>
+                    <span>姓名</span>
+                    <input name="name" type="text" placeholder="例如：徐正…" autocomplete="name" required />
+                  </label>
+                  <label>
+                    <span>性别</span>
+                    <select name="gender" autocomplete="sex" required>
+                      <option value="female">女</option>
+                      <option value="male">男</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>年柱</span>
+                    <input name="yearPillar" type="text" placeholder="例如：庚辰…" autocomplete="off" required />
+                  </label>
+                  <label>
+                    <span>月柱</span>
+                    <input name="monthPillar" type="text" placeholder="例如：己丑…" autocomplete="off" required />
+                  </label>
+                  <label>
+                    <span>日柱</span>
+                    <input name="dayPillar" type="text" placeholder="例如：壬辰…" autocomplete="off" required />
+                  </label>
+                  <label>
+                    <span>时柱</span>
+                    <input name="timePillar" type="text" placeholder="例如：庚戌，不知道可留空…" autocomplete="off" />
+                  </label>
+                  <label>
+                    <span>优先想看</span>
+                    <select name="focus" autocomplete="off">
+                      <option value="overall">综合命盘</option>
+                      <option value="career">事业财运</option>
+                      <option value="relationship">感情婚姻</option>
+                      <option value="annual">年度流年</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>想看的时间范围</span>
+                    <select name="horizon" autocomplete="off">
+                      <option value="3">未来 3 年</option>
+                      <option value="5">未来 5 年</option>
+                      <option value="10">未来 10 年</option>
+                    </select>
+                  </label>
+                  <p class="soft-copy">如果你已经从别处排好了八字，这里可以直接输入四柱。后续补充阳历生日与出生时间，还能继续细化起运与大运。</p>
+                  <button type="submit" class="button primary">按八字直接测算</button>
+                  <p class="form-feedback is-hidden" id="direct-form-feedback" role="alert"></p>
+                </form>
+              </div>
+            </section>
+
+            <section class="panel result-panel glow-card" id="result-panel">
+              <div class="panel-header result-heading">
+                <div>
+                  <h3>你的命盘光晕</h3>
+                </div>
+              </div>
+
+              <div class="result-empty" id="result-empty">
+              </div>
+
+              <div class="result-content is-hidden" id="result-content">
+                <section class="summary-band">
+                  <div class="summary-card glow-card">
+                    <p class="summary-label">命主</p>
+                    <h4 id="summary-name">-</h4>
+                    <p id="summary-theme" class="summary-subtext">-</p>
+                  </div>
+                  <div class="summary-card glow-card">
+                    <p class="summary-label">日主</p>
+                    <h4 id="summary-day-master">-</h4>
+                    <p id="summary-lunar" class="summary-subtext">-</p>
+                  </div>
+                  <div class="summary-card glow-card">
+                    <p class="summary-label">当前阶段</p>
+                    <h4 id="summary-pattern">-</h4>
+                    <p id="summary-time-note" class="summary-subtext">-</p>
+                  </div>
+                </section>
+
+                <article class="result-card wide glow-card">
+                  <div class="insight-list">
+                    <section class="insight-card insight-primary">
+                      <h5>命盘底色</h5>
+                      <p id="analysis-overview">-</p>
+                    </section>
+                    <div class="insight-grid">
+                      <section class="insight-card">
+                        <h5>给人的感觉</h5>
+                        <p id="analysis-public-persona">-</p>
+                      </section>
+                      <section class="insight-card">
+                        <h5>亲密关系里的模式</h5>
+                        <p id="analysis-intimacy">-</p>
+                      </section>
+                    </div>
+                    <div class="insight-grid insight-grid-compact">
+                      <section class="insight-card">
+                        <h5>容易内耗的地方</h5>
+                        <p id="analysis-burnout">-</p>
+                      </section>
+                      <section class="insight-card">
+                        <h5>最需要的关系安全感</h5>
+                        <p id="analysis-security-need">-</p>
+                      </section>
+                      <section class="insight-card">
+                        <h5>未来两三年的变化重心</h5>
+                        <p id="analysis-change-area">-</p>
+                      </section>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="result-card wide glow-card">
+                  <div class="card-header">
+                    <h4>你的五行属性</h4>
+                    <p>先看命盘里哪一股气最明显，也看看什么样的环境更能让你舒服展开。</p>
+                  </div>
+                  <div id="elements-chart" class="elements-chart"></div>
+                </article>
+
+                <article class="result-card wide glow-card featured-reading">
+                  <div class="card-header featured-header">
+                    <h4>温柔解读</h4>
+                    <p class="poetic-copy">一阴一阳之谓道，顺其气而知其心。</p>
+                  </div>
+                  <div class="featured-copy" id="analysis-healing">-</div>
+                </article>
+
+                <section class="result-grid">
+                  <article class="result-card wide glow-card hero-result-card">
+                    <div class="card-header">
+                      <h4>四柱与十神</h4>
+                      <p>天道有寒暖，地道有燥湿。四柱既列，命局中的干支与十神便自成章法。</p>
+                    </div>
+                    <div class="table-wrap">
+                      <table class="pillars-table">
+                        <thead>
+                          <tr>
+                            <th>四柱</th>
+                            <th>天干</th>
+                            <th>地支</th>
+                            <th>五行</th>
+                            <th>藏干 / 十神 / 纳音</th>
+                          </tr>
+                        </thead>
+                        <tbody id="pillars-body"></tbody>
+                      </table>
+                    </div>
+                  </article>
+
+                  <article class="result-card glow-card">
+                    <div class="card-header">
+                      <h4>格局与大运</h4>
+                      <p>先看这张盘的底色，再看它现在走到人生的哪一步。</p>
+                    </div>
+                    <div class="stacked-meta">
+                      <div class="meta-pill">
+                        <span>格局</span>
+                        <strong id="geju-label">-</strong>
+                      </div>
+                      <p id="geju-summary" class="soft-copy">-</p>
+                      <div class="meta-pill">
+                        <span>当前大运</span>
+                        <strong id="current-dayun">-</strong>
+                      </div>
+                      <p id="dayun-summary" class="soft-copy">-</p>
+                    </div>
+                  </article>
+
+                  <article class="result-card glow-card">
+                    <div class="card-header">
+                      <h4>时辰校准</h4>
+                      <p>差之毫厘，气象有别。若时辰未明，也可先看共性，再慢慢校准。</p>
+                    </div>
+                    <div class="stacked-meta">
+                      <div class="meta-pill">
+                        <span>当前状态</span>
+                        <strong id="time-mode-label">-</strong>
+                      </div>
+                      <p id="time-mode-summary" class="soft-copy">-</p>
+                      <div id="time-candidates" class="chip-grid"></div>
+                      <p id="time-mode-prompt" class="soft-copy">-</p>
+                    </div>
+                  </article>
+
+                  <article class="result-card wide glow-card">
+                    <div class="card-header">
+                      <h4>十神主题</h4>
+                      <p>这些是命盘里最明显的几股力量，能帮助你更快看懂自己的性格和处事方式。</p>
+                    </div>
+                    <div id="ten-gods-grid" class="chip-grid"></div>
+                  </article>
+
+                  <article class="result-card wide glow-card">
+                    <div class="card-header">
+                      <h4>未来流年卡片</h4>
+                      <p>不用急着把每一年都看成好坏，先看看未来几年最容易被推到眼前的主题。</p>
+                    </div>
+                    <div id="annual-cards" class="annual-grid"></div>
+                  </article>
+
+                  <article class="result-card wide glow-card followup-card">
+                    <div class="card-header">
+                      <h4>继续问一个问题</h4>
+                      <p>先看总盘，再挑一件你现在最在意的事慢慢问，会更容易把结果看进心里。</p>
+                    </div>
+                    <div class="followup-shell">
+                      <div class="followup-suggestions" id="followup-suggestions"></div>
+                      <form class="followup-form" id="followup-form">
+                        <label>
+                          <span>现在最想继续问什么</span>
+                          <textarea
+                            id="followup-input"
+                            rows="4"
+                            placeholder="例如：我接下来两年更适合换工作，还是先稳住？"
+                            required
+                          ></textarea>
+                        </label>
+                        <div class="followup-actions">
+                          <button type="submit" class="button primary">继续看看</button>
+                        </div>
+                      </form>
+                      <section class="followup-response is-hidden" id="followup-response">
+                        <h5>顺着这张命盘继续往下看</h5>
+                        <p id="followup-answer">-</p>
+                      </section>
+                    </div>
+                  </article>
+                </section>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./static/calculator.js?v=20260414l"></script>
+  </body>
+</html>

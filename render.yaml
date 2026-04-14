@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: wuxing-paipai
+    runtime: python
+    plan: free
+    buildCommand: ""
+    startCommand: python server.py
+    envVars:
+      - key: HOST
+        value: 0.0.0.0

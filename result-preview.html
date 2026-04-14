@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>测算结果预览 | 五行拍拍</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Huninn&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./static/styles.css?v=20260414f" />
+  </head>
+  <body>
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+    <div class="ambient ambient-c"></div>
+    <div class="ambient ambient-d"></div>
+    <div class="ambient ambient-e"></div>
+
+    <div class="page-shell">
+      <main class="calculator-page standalone-page">
+        <section class="page-topbar glow-card">
+          <a class="button ghost" href="./index.html">返回首页</a>
+          <div class="page-topbar-copy">
+            <h1>测算结果预览</h1>
+          </div>
+        </section>
+
+        <section class="calculator">
+          <div class="stacked-workspace">
+            <section class="panel result-panel glow-card" id="result-panel">
+              <div class="panel-header result-heading">
+                <div>
+                  <h3>你的命盘光晕</h3>
+                  <p>这是当前版本的结果页预览，方便你直接查看布局、文案和层级。</p>
+                </div>
+              </div>
+
+              <div class="result-empty is-hidden" id="result-empty"></div>
+
+              <div class="result-content" id="result-content">
+                <section class="summary-band">
+                  <div class="summary-card glow-card">
+                    <p class="summary-label">命主</p>
+                    <h4 id="summary-name">-</h4>
+                    <p id="summary-theme" class="summary-subtext">-</p>
+                  </div>
+                  <div class="summary-card glow-card">
+                    <p class="summary-label">日主</p>
+                    <h4 id="summary-day-master">-</h4>
+                    <p id="summary-lunar" class="summary-subtext">-</p>
+                  </div>
+                  <div class="summary-card glow-card">
+                    <p class="summary-label">当前阶段</p>
+                    <h4 id="summary-pattern">-</h4>
+                    <p id="summary-time-note" class="summary-subtext">-</p>
+                  </div>
+                </section>
+
+                <article class="result-card wide glow-card">
+                  <div class="insight-list">
+                    <section class="insight-card insight-primary">
+                      <h5>命盘底色</h5>
+                      <p id="analysis-overview">-</p>
+                    </section>
+                    <div class="insight-grid">
+                      <section class="insight-card">
+                        <h5>给人的感觉</h5>
+                        <p id="analysis-public-persona">-</p>
+                      </section>
+                      <section class="insight-card">
+                        <h5>亲密关系里的模式</h5>
+                        <p id="analysis-intimacy">-</p>
+                      </section>
+                    </div>
+                    <div class="insight-grid insight-grid-compact">
+                      <section class="insight-card">
+                        <h5>容易内耗的地方</h5>
+                        <p id="analysis-burnout">-</p>
+                      </section>
+                      <section class="insight-card">
+                        <h5>最需要的关系安全感</h5>
+                        <p id="analysis-security-need">-</p>
+                      </section>
+                      <section class="insight-card">
+                        <h5>未来两三年的变化重心</h5>
+                        <p id="analysis-change-area">-</p>
+                      </section>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="result-card wide glow-card">
+                  <div class="card-header">
+                    <h4>你的五行属性</h4>
+                    <p>先看命盘里哪一股气最明显，也看看什么样的环境更能让你舒服展开。</p>
+                  </div>
+                  <div id="elements-chart" class="elements-chart"></div>
+                </article>
+
+                <article class="result-card wide glow-card featured-reading">
+                  <div class="card-header featured-header">
+                    <h4>温柔解读</h4>
+                    <p class="poetic-copy">一阴一阳之谓道，顺其气而知其心。</p>
+                  </div>
+                  <div class="featured-copy" id="analysis-healing">-</div>
+                </article>
+
+                <section class="result-grid">
+                  <article class="result-card wide glow-card hero-result-card">
+                    <div class="card-header">
+                      <h4>四柱与十神</h4>
+                      <p>天道有寒暖，地道有燥湿。四柱既列，命局中的干支与十神便自成章法。</p>
+                    </div>
+                    <div class="table-wrap">
+                      <table class="pillars-table">
+                        <thead>
+                          <tr>
+                            <th>四柱</th>
+                            <th>天干</th>
+                            <th>地支</th>
+                            <th>五行</th>
+                            <th>藏干 / 十神 / 纳音</th>
+                          </tr>
+                        </thead>
+                        <tbody id="pillars-body"></tbody>
+                      </table>
+                    </div>
+                  </article>
+
+                  <article class="result-card glow-card">
+                    <div class="card-header">
+                      <h4>格局与大运</h4>
+                      <p>先看这张盘的底色，再看它现在走到人生的哪一步。</p>
+                    </div>
+                    <div class="stacked-meta">
+                      <div class="meta-pill">
+                        <span>格局</span>
+                        <strong id="geju-label">-</strong>
+                      </div>
+                      <p id="geju-summary" class="soft-copy">-</p>
+                      <div class="meta-pill">
+                        <span>当前大运</span>
+                        <strong id="current-dayun">-</strong>
+                      </div>
+                      <p id="dayun-summary" class="soft-copy">-</p>
+                    </div>
+                  </article>
+
+                  <article class="result-card glow-card">
+                    <div class="card-header">
+                      <h4>时辰校准</h4>
+                      <p>差之毫厘，气象有别。若时辰未明，也可先看共性，再慢慢校准。</p>
+                    </div>
+                    <div class="stacked-meta">
+                      <div class="meta-pill">
+                        <span>当前状态</span>
+                        <strong id="time-mode-label">-</strong>
+                      </div>
+                      <p id="time-mode-summary" class="soft-copy">-</p>
+                      <div id="time-candidates" class="chip-grid"></div>
+                      <p id="time-mode-prompt" class="soft-copy">-</p>
+                    </div>
+                  </article>
+
+                  <article class="result-card wide glow-card">
+                    <div class="card-header">
+                      <h4>十神主题</h4>
+                      <p>这些是命盘里最明显的几股力量，能帮助你更快看懂自己的性格和处事方式。</p>
+                    </div>
+                    <div id="ten-gods-grid" class="chip-grid"></div>
+                  </article>
+
+                  <article class="result-card wide glow-card">
+                    <div class="card-header">
+                      <h4>未来流年卡片</h4>
+                      <p>不用急着把每一年都看成好坏，先看看未来几年最容易被推到眼前的主题。</p>
+                    </div>
+                    <div id="annual-cards" class="annual-grid"></div>
+                  </article>
+
+                  <article class="result-card wide glow-card followup-card">
+                    <div class="card-header">
+                      <h4>继续问一个问题</h4>
+                      <p>先看总盘，再挑一件你现在最在意的事慢慢问，会更容易把结果看进心里。</p>
+                    </div>
+                    <div class="followup-shell">
+                      <div class="followup-suggestions" id="followup-suggestions"></div>
+                      <form class="followup-form" id="followup-form">
+                        <label>
+                          <span>现在最想继续问什么</span>
+                          <textarea id="followup-input" rows="4" placeholder="例如：我接下来两年更适合换工作，还是先稳住？" required></textarea>
+                        </label>
+                        <div class="followup-actions">
+                          <button type="submit" class="button primary">继续看看</button>
+                        </div>
+                      </form>
+                      <section class="followup-response is-hidden" id="followup-response">
+                        <h5>顺着这张命盘继续往下看</h5>
+                        <p id="followup-answer">-</p>
+                      </section>
+                    </div>
+                  </article>
+                </section>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./static/calculator.js?v=20260414l"></script>
+    <script>
+      fetch("./sample-result.json")
+        .then((response) => response.json())
+        .then((payload) => {
+          window.renderBaziPreview(payload.formData, payload.result);
+        });
+    </script>
+  </body>
+</html>
