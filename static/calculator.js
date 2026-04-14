@@ -308,27 +308,27 @@ function buildFollowupAnswer(question, formData, result) {
   const isRelationship = /感情|关系|喜欢|对象|恋爱|婚姻|亲密|安全感/.test(question);
   const isCareer = /工作|事业|财运|换工作|收入|发展|升职|选择/.test(question);
   const poeticLead = isRelationship
-    ? "情不知所起，先看其深浅，再看其去处。"
+    ? "按八字看，感情不能只看一时热不热，还得看命里真正要的是什么。"
     : isCareer
-      ? "行到水穷处，未必要急着转身，也可以先看哪一条路更稳。"
-      : "一气流行，各有归处。问的不是吉凶两个字，而是这股气会把你带向哪里。";
+      ? "按八字看，事业也不是一句冲不冲就能定，还得看这步运能不能托住你。"
+      : "按八字看，这类问题不能只用吉凶两个字来答，还是要回到命盘本身。";
   const currentTheme = isRelationship
     ? result.analysis.intimacy
     : isCareer
       ? result.analysis.career
       : result.analysis.overview;
   const practicalHint = isRelationship
-    ? `顺着这张盘看，关系这一面更在意的是确定感和真实回应。${result.analysis.securityNeed}`
+    ? `这张盘在关系里更要确定感和真实回应。${result.analysis.securityNeed}`
     : isCareer
-      ? `顺着这张盘看，这几年更适合先把位置放到能长期积累的方向里。${result.analysis.changeArea}`
-      : `顺着这张盘看，眼下最值得先看清的，是哪种环境能让状态慢慢松开。${result.analysis.burnout}`;
+      ? `这几年更适合先把位置放到能长期积累的方向里。${result.analysis.changeArea}`
+      : `眼下更值得先看清的，是哪种环境能让状态慢慢松开。${result.analysis.burnout}`;
   const readingLead = isRelationship
-    ? "这类问题不能只看一时心动，更要看命里真正需要怎样的关系方式。"
+    ? "感情这类问题，要先看日主、十神，再看大运流年怎么引动。"
     : isCareer
-      ? "这类现实选择不能只看眼前轻松不轻松，更要看它是不是合当下这步运。"
-      : "这类问题不能只用一句吉或凶来答，还是要回到命局本身。";
+      ? "事业这类问题，也要先看日主强弱，再看十神主题和当下运势。"
+      : "这类问题，更适合顺着八字的次序一层层往下读。";
 
-  return `${poeticLead} 所问的是“${question}”。${readingLead} 按八字的次序，先看日主，这张盘属 ${result.dayMaster.pattern}；再看十神，眼下更显眼的是 ${dominantTenGod}；最后落到大运流年，目前行 ${currentDaYun}，而 ${annualLead} 已经把这一层主题推到眼前。${currentTheme} ${practicalHint} 更贴近这张盘的建议是：先别急着用一句“要不要”定死方向，先看哪条路更稳、更长，也更少消耗。若要继续细看，把问题收窄到一个场景，例如“未来两年感情里最该注意什么”或“换工作时最该避开什么”，这样更能顺着命盘往下读。`;
+  return `${poeticLead} 你现在问的是“${question}”。${readingLead} 先看日主，这张盘是 ${result.dayMaster.pattern}；再看十神，眼下更显眼的是 ${dominantTenGod}，说明很多事都不是简单的顺不顺，而是带着自己的判断和标准。再往下看，现在走的是 ${currentDaYun}，而 ${annualLead} 已经把这一层主题推到眼前。${currentTheme} ${practicalHint} 所以更贴近八字的建议是：先别急着把问题问成要不要，而是先问这件事会不会让你更稳、更顺，也更少消耗。若想继续细看，把问题收窄到一个场景，比如“未来两年感情里最该注意什么”或“换工作时最该避开什么”，这样会更好读。`;
 }
 
 function renderResult(formData, result) {
