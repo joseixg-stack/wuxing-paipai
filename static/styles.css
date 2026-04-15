@@ -859,17 +859,50 @@ th {
   padding: 22px;
   border-radius: 28px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.18));
+  display: grid;
+  gap: 16px;
 }
 
 .followup-response.is-hidden {
   display: none;
 }
 
-.followup-response h5 {
-  margin-bottom: 10px;
+.followup-response-header {
+  display: grid;
+  gap: 8px;
 }
 
-.followup-response p {
+.followup-response h5,
+.followup-response-header p {
+  margin: 0;
+}
+
+.followup-response-header p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.followup-thread {
+  display: grid;
+  gap: 14px;
+}
+
+.followup-turn {
+  display: grid;
+  gap: 10px;
+  padding: 18px 18px 16px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.22));
+}
+
+.followup-turn .turn-question {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.followup-turn .turn-answer {
   margin: 0;
   line-height: 1.92;
   color: var(--muted);

@@ -16,7 +16,7 @@ const followupSuggestions = document.getElementById("followup-suggestions");
 const followupForm = document.getElementById("followup-form");
 const followupInput = document.getElementById("followup-input");
 const followupResponse = document.getElementById("followup-response");
-const followupAnswer = document.getElementById("followup-answer");
+const followupThread = document.getElementById("followup-thread");
 const birthdayInput = document.getElementById("birthday-input");
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
@@ -24,6 +24,7 @@ const timeRangeSelect = document.getElementById("time-range-select");
 let activeStep = 0;
 let latestResult = null;
 let latestFormData = null;
+let followupHistory = [];
 
 function setStep(stepIndex) {
   activeStep = Math.max(0, Math.min(stepIndex, stepPanels.length - 1));
@@ -249,26 +250,66 @@ function renderTimeInsight(timeInsight) {
 }
 
 function buildFollowupSuggestions(formData, result) {
-  const suggestions = [
-    "我最近更适合稳住，还是主动做变化？",
-    "感情里我更容易卡在哪一种关系模式？",
-    "接下来一两年工作上该更主动一点吗？",
-    "如果出生时间不够准，哪些判断最值得再校正？",
-  ];
+  const suggestions = [];
+  const focus = formData.focus || "overall";
+  const dominant = result.tenGods.dominant[0]?.name || "";
+  const second = result.tenGods.dominant[1]?.name || "";
+  const geju = result.geju.label || "";
+  const pattern = result.dayMaster.pattern || "";
 
-  if ((formData.focus || "overall") === "career") {
-    suggestions.unshift("我的事业运更适合慢慢积累，还是主动争机会？");
-  }
+  const pushMany = (...items) => {
+    items.filter(Boolean).forEach((item) => suggestions.push(item));
+  };
 
-  if ((formData.focus || "overall") === "relationship") {
-    suggestions.unshift("这张盘在感情里最需要被看见的需求是什么？");
+  if (focus === "relationship") {
+    pushMany(
+      "这张盘在关系里最怕哪一种落空：没人回应，还是回应不够真？",
+      "未来两年感情里最该先看清的一个点是什么？",
+    );
+  } else if (focus === "career") {
+    pushMany(
+      "这张盘眼下更适合稳住位置，还是顺势换到新的轨道？",
+      "未来两年工作里最该避开的消耗点是什么？",
+    );
+  } else if (focus === "finance") {
+    pushMany(
+      "这张盘的财更像靠位置、能力，还是靠节奏抓机会？",
+      "未来两年最该守住的钱，是收入、开销，还是错误投入？",
+    );
+  } else {
+    pushMany(
+      "这张盘眼下最该先看清的一层主题是什么？",
+      "现在这步运，真正被推到眼前的事情是哪一类？",
+    );
   }
 
   if (result.timeInsight.mode !== "manual-bazi" && !result.meta.timeExact) {
-    suggestions.unshift("如果我只知道大概时段，先看哪些共性最有参考价值？");
+    pushMany("如果出生时间只知道大概时段，先看哪些共性最有参考价值？");
   }
 
-  return suggestions.slice(0, 4);
+  if (geju.includes("官") || dominant.includes("官") || dominant.includes("杀")) {
+    pushMany("这张盘为什么总会被责任、标准和体面感推着走？");
+  }
+
+  if (dominant.includes("印") || second.includes("印")) {
+    pushMany("这张盘为什么很多时候想得比说得快，也更习惯先想明白？");
+  }
+
+  if (dominant.includes("财") || second.includes("财")) {
+    pushMany("这张盘的钱最容易花在什么地方，又最容易漏在哪里？");
+  }
+
+  if (dominant.includes("食") || dominant.includes("伤") || second.includes("食") || second.includes("伤")) {
+    pushMany("这张盘的想法和表达，最该落到什么地方才不算白费？");
+  }
+
+  if (pattern.includes("偏弱")) {
+    pushMany("这张盘最需要什么样的环境，状态才会慢慢松开？");
+  } else if (pattern.includes("偏旺")) {
+    pushMany("这张盘眼下最该放下的，是哪一种太用力？");
+  }
+
+  return Array.from(new Set(suggestions)).slice(0, 4);
 }
 
 function renderFollowupSuggestions(formData, result) {
@@ -296,44 +337,201 @@ function renderFollowupSuggestions(formData, result) {
 }
 
 function buildFollowupAnswer(question, formData, result) {
+  const q = question || "";
+  const geju = result.geju.label || "";
+  const pattern = result.dayMaster.pattern || "";
+  const dominantTenGod = result.tenGods.dominant[0]?.name || "";
+  const secondTenGod = result.tenGods.dominant[1]?.name || "";
   const currentDaYun = result.luck.currentDaYun
     ? `${result.luck.currentDaYun.ganzhi}（${result.luck.currentDaYun.startYear}-${result.luck.currentDaYun.endYear}）`
-    : "当前阶段";
+    : "眼下这步运";
   const annualLead = result.annualCards[0]
-    ? `${result.annualCards[0].year}年是 ${result.annualCards[0].ganzhi}，主题偏向“${result.annualCards[0].title}”`
-    : "未来几年先看整体节奏";
-  const dominantTenGod = result.tenGods.dominant[0]?.name || "命盘主题";
-  const favorable = result.favorableElements.join("、");
-  const text = question.toLowerCase();
-  const isRelationship = /感情|关系|喜欢|对象|恋爱|婚姻|亲密|安全感/.test(question);
-  const isCareer = /工作|事业|财运|换工作|收入|发展|升职|选择/.test(question);
-  const poeticLead = isRelationship
-    ? "按八字看，感情不能只看一时热不热，还得看命里真正要的是什么。"
-    : isCareer
-      ? "按八字看，事业也不是一句冲不冲就能定，还得看这步运能不能托住你。"
-      : "按八字看，这类问题不能只用吉凶两个字来答，还是要回到命盘本身。";
-  const currentTheme = isRelationship
-    ? result.analysis.intimacy
-    : isCareer
-      ? result.analysis.career
-      : result.analysis.overview;
-  const practicalHint = isRelationship
-    ? `这张盘在关系里更要确定感和真实回应。${result.analysis.securityNeed}`
-    : isCareer
-      ? `这几年更适合先把位置放到能长期积累的方向里。${result.analysis.changeArea}`
-      : `眼下更值得先看清的，是哪种环境能让状态慢慢松开。${result.analysis.burnout}`;
-  const readingLead = isRelationship
-    ? "感情这类问题，要先看日主、十神，再看大运流年怎么引动。"
-    : isCareer
-      ? "事业这类问题，也要先看日主强弱，再看十神主题和当下运势。"
-      : "这类问题，更适合顺着八字的次序一层层往下读。";
+    ? `${result.annualCards[0].year}年是${result.annualCards[0].ganzhi}，先被推到前面的主题更像“${result.annualCards[0].title}”。`
+    : "流年这层，还要顺着当前大运再往下细看。";
+  const fiscalLead = result.annualCards[1]
+    ? `${result.annualCards[1].year}年前后，钱和现实安排这层会更容易被碰到。`
+    : "财和现实安排这层，还是要顺着当前大运慢慢看。";
+  const dominantCombo = [dominantTenGod, secondTenGod].filter(Boolean).join("、");
+  const relationshipHit = /感情|关系|喜欢|桃花|对象|婚|亲密|相处|恋爱/.test(q);
+  const careerHit = /工作|事业|岗位|升职|职业|跳槽|换工作|公司|发展/.test(q);
+  const financeHit = /财|钱|收入|副业|赚钱|存款|开销|花销|投资|负债/.test(q);
+  const timeHit = /时辰|出生时间|时段|几点|校准|模糊时间|晚上|早上|中午|下午/.test(q);
 
-  return `${poeticLead} 你现在问的是“${question}”。${readingLead} 先看日主，这张盘是 ${result.dayMaster.pattern}；再看十神，眼下更显眼的是 ${dominantTenGod}，说明很多事都不是简单的顺不顺，而是带着自己的判断和标准。再往下看，现在走的是 ${currentDaYun}，而 ${annualLead} 已经把这一层主题推到眼前。${currentTheme} ${practicalHint} 所以更贴近八字的建议是：先别急着把问题问成要不要，而是先问这件事会不会让你更稳、更顺，也更少消耗。若想继续细看，把问题收窄到一个场景，比如“未来两年感情里最该注意什么”或“换工作时最该避开什么”，这样会更好读。`;
+  const relationshipNeed = (() => {
+    if (dominantTenGod.includes("印")) return "确定感和稳定回应";
+    if (dominantTenGod.includes("官") || dominantTenGod.includes("杀")) return "责任感和长期匹配";
+    if (dominantTenGod.includes("财")) return "现实可靠和能一起过日子的感觉";
+    if (dominantTenGod.includes("食") || dominantTenGod.includes("伤")) return "表达顺不顺、相处有没有压抑";
+    return "真实回应和相处后的安心感";
+  })();
+
+  const careerAxis = (() => {
+    if (geju.includes("官") && dominantTenGod.includes("印")) return "规则、位置、长期抬升";
+    if (geju.includes("官") && (dominantTenGod.includes("食") || dominantTenGod.includes("伤"))) return "标准之下的表达、判断和执行";
+    if (dominantTenGod.includes("财")) return "资源、兑现效率和结果感";
+    if (dominantTenGod.includes("食") || dominantTenGod.includes("伤")) return "输出、方案、项目推进";
+    return "把能力放进能积累的位置";
+  })();
+
+  const financeAxis = (() => {
+    if (dominantTenGod.includes("财")) return "收入机会并不算少，关键在守不守得住";
+    if (dominantTenGod.includes("印")) return "钱更像跟着专业、位置和稳定性走";
+    if (dominantTenGod.includes("官") || dominantTenGod.includes("杀")) return "财更容易从责任、位置和长期安排里慢慢长出来";
+    if (dominantTenGod.includes("食") || dominantTenGod.includes("伤")) return "财路更像靠输出、效率和把点子变成结果";
+    return "财不是凭空来的，还是要靠节奏和位置慢慢累起来";
+  })();
+
+  const patternLine = pattern.includes("偏弱")
+    ? "这张盘眼下不是没力气，而是更怕位置不对、环境太耗。"
+    : pattern.includes("偏旺")
+      ? "这张盘底子并不虚，很多时候真正难的不是扛不住，而是太容易自己先顶上去。"
+      : "这张盘不是一下子往外冒的路子，更讲究顺着节奏把力气放对地方。";
+
+  if (relationshipHit) {
+    const opener = "感情这类问题，先不急着问成会不会在一起，还是先看关系里真正卡住的那一层。";
+    const structure = `先看日主，这张盘目前是${pattern}；再看十神，眼下更显眼的是${dominantCombo || "当前这组主神"}，所以关系里最看重的不是表面的热闹，而是${relationshipNeed}。`;
+    const timing = geju.includes("官")
+      ? `${currentDaYun}这一步，本来就会把关系里的责任、承诺和现实匹配推到前面。${annualLead}`
+      : `${currentDaYun}这一步，更像在筛一筛什么人和什么相处方式真的能留下来。${annualLead}`;
+    const close = dominantTenGod.includes("印")
+      ? "真要继续往下看，最值得细问的不是有没有人出现，而是遇到关系时，哪一种回应最能让这张盘放下戒备。"
+      : dominantTenGod.includes("官") || dominantTenGod.includes("杀")
+        ? "真要继续往下看，最值得细问的不是桃花多不多，而是长期关系里最怕遇到哪一种不负责。"
+        : "真要继续往下看，可以把问题收窄到一段关系里最容易反复的那一个点，这样会更准。";
+    return `${opener} ${structure} ${patternLine} ${timing} ${close}`;
+  }
+
+  if (careerHit) {
+    const opener = "事业这类问题，先不急着看成赢没赢，还是先看这张盘最适合把力气放进哪一类位置。";
+    const structure = `先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以职业主轴更偏向${careerAxis}。`;
+    const timing = geju.includes("官")
+      ? `${currentDaYun}这一步，事业上更容易遇到位置、标准、责任同时压上来的情况。${annualLead}`
+      : `${currentDaYun}这一步，更像是在看原先那套做事方式还能不能继续往上走。${annualLead}`;
+    const close = dominantTenGod.includes("食") || dominantTenGod.includes("伤")
+      ? "真要继续细看，下一步最值得问的是：这张盘适合自己去带节奏，还是更适合在一个成熟系统里把判断放大。"
+      : dominantTenGod.includes("印")
+        ? "真要继续细看，下一步最值得问的是：哪一种平台最能让这张盘的长期价值慢慢抬起来。"
+        : "真要继续细看，可以直接收窄到换工作、升职、转岗三选一，这样读出来会更有落点。";
+    return `${opener} ${structure} ${patternLine} ${timing} ${close}`;
+  }
+
+  if (financeHit) {
+    const opener = "财运这类问题，先不急着问会不会一下子见钱，还是先看这张盘的钱是从哪条路慢慢出来的。";
+    const structure = `先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以财这层更像在看${financeAxis}。`;
+    const timing = dominantTenGod.includes("财")
+      ? `${currentDaYun}这一步，钱的进出会更容易跟着机会和判断一起放大。${fiscalLead}`
+      : dominantTenGod.includes("印")
+        ? `${currentDaYun}这一步，钱更像跟着位置、稳定性和长期积累慢慢走。${fiscalLead}`
+        : `${currentDaYun}这一步，财这层不会离开现实安排单独发生。${fiscalLead}`;
+    const close = dominantTenGod.includes("财")
+      ? "真要继续细看，下一步最值得问的是：这张盘的钱更容易漏在冲动决定，还是漏在替别人兜底。"
+      : dominantTenGod.includes("官") || dominantTenGod.includes("杀")
+        ? "真要继续细看，下一步最值得问的是：收入增长更靠位置升级，还是靠额外加码。"
+        : "真要继续细看，可以直接问未来两年最该守住哪一笔钱，这样会更有用。";
+    return `${opener} ${structure} ${patternLine} ${timing} ${close}`;
+  }
+
+  if (timeHit) {
+    const opener = "时辰这类问题，先看时柱会不会改掉主轴，再看它主要会把哪一层细节拉开。";
+    const structure = result.timeInsight.mode !== "manual-bazi" && !result.meta.timeExact
+      ? "年、月、日三柱已经能先读出这张盘的大方向，所以共性的部分不会完全跑掉。真正会被时柱拉开差别的，多半是亲密关系的表达方式、晚一点的人生节奏，以及某些事情落下来的时点。"
+      : "现在给到的是较明确的时柱，所以主轴已经比较稳。再做校准时，重点不是推翻整张盘，而是看某些细节是不是更贴近日常经历。";
+    const timing = result.timeInsight.prompt || "如果继续细看，最好把时间先缩到更小范围，再顺着时柱差异对照实际经历。";
+    const close = dominantTenGod.includes("印")
+      ? "这类盘做时辰校准，最有用的往往不是问吉凶，而是对照自己到底更像早一点打开，还是更习惯晚一点才真正交底。"
+      : dominantTenGod.includes("官") || dominantTenGod.includes("杀")
+        ? "这类盘做时辰校准，最值得对照的是责任感、关系节奏和晚运发力点到底落在哪一侧。"
+        : "这类盘做时辰校准，最适合从一两件已经发生过的事回头比，看哪一种时柱更贴。";
+    return `${opener} ${structure} ${timing} ${close}`;
+  }
+
+  const opener = geju.includes("官")
+    ? "这类问题，还是先回到命盘本身，看哪一层秩序感和责任感最重。"
+    : geju.includes("伤") || geju.includes("食")
+      ? "这类问题，还是先回到命盘本身，看哪一层想法、表达和判断最强。"
+      : "这类问题，还是先回到命盘本身，看眼下真正被推到前面的主题是什么。";
+  const structure = `先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以很多事都不是只看顺不顺，而是看这件事会把状态带向更稳，还是更紧。`;
+  const timing = `${currentDaYun}这一步，本来就在慢慢把一层主题推到台前。${annualLead}`;
+  const close = dominantTenGod.includes("印")
+    ? "如果继续往下问，最好把问题收窄到一个场景里，这张盘会在细节里更容易读出分寸。"
+    : dominantTenGod.includes("财")
+      ? "如果继续往下问，最好把问题收窄到现实选择里，这张盘在具体取舍上更容易读出差别。"
+      : "如果继续往下问，最好把时间或场景收窄一点，这样会比宽泛地问一句好不好更经得起看。";
+  return `${opener} ${structure} ${patternLine} ${timing} ${close}`;
+}
+
+function detectFollowupTrack(question) {
+  const q = question || "";
+  if (/感情|关系|喜欢|桃花|对象|婚|亲密|相处|恋爱/.test(q)) return "relationship";
+  if (/工作|事业|岗位|升职|职业|跳槽|换工作|公司|发展/.test(q)) return "career";
+  if (/财|钱|收入|副业|赚钱|存款|开销|花销|投资|负债/.test(q)) return "finance";
+  if (/时辰|出生时间|时段|几点|校准|模糊时间|晚上|早上|中午|下午/.test(q)) return "time";
+  return "overall";
+}
+
+function buildNextFollowupPrompts(track, result) {
+  const dominant = result.tenGods.dominant[0]?.name || "";
+  const currentDaYun = result.luck.currentDaYun?.ganzhi || "这步大运";
+
+  if (track === "relationship") {
+    return [
+      "未来两年关系里最该防的是冷下来，还是看走眼？",
+      dominant.includes("印")
+        ? "这张盘在感情里最难开口的真实需求是什么？"
+        : "这张盘在关系里最容易先忍住不说的，是哪一种委屈？",
+    ];
+  }
+
+  if (track === "career") {
+    return [
+      `${currentDaYun}这一步，更适合守住位置，还是主动争取变化？`,
+      dominant.includes("食") || dominant.includes("伤")
+        ? "这张盘最该把判断和表达用在什么工作位置上？"
+        : "这张盘最值得长期投入的职业路径是哪一类？",
+    ];
+  }
+
+  if (track === "finance") {
+    return [
+      "未来两年最该先守住哪一笔钱？",
+      dominant.includes("财")
+        ? "这张盘的钱更容易漏在冲动决定，还是漏在替别人兜底？"
+        : "这张盘的财更适合慢慢累，还是阶段性发力？",
+    ];
+  }
+
+  if (track === "time") {
+    return [
+      "如果只知道大概时段，先看哪些共性最不会跑掉？",
+      "时柱最可能改动的，是关系表达、晚运，还是事情落点？",
+    ];
+  }
+
+  return [
+    "把问题收窄到未来两年，最值得先看哪一层？",
+    "如果只挑一件眼下最该看清的事，命盘会先提醒什么？",
+  ];
+}
+
+function renderFollowupThread() {
+  if (!followupThread) return;
+
+  followupThread.innerHTML = followupHistory
+    .map(
+      (item) => `
+        <article class="followup-turn">
+          <p class="turn-question">问：${item.question}</p>
+          <p class="turn-answer">${item.answer}</p>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function renderResult(formData, result) {
   latestFormData = formData;
   latestResult = result;
+  followupHistory = [];
   resultEmpty.classList.add("is-hidden");
   resultContent.classList.remove("is-hidden");
   setTheme(result.theme);
@@ -397,8 +595,8 @@ function renderResult(formData, result) {
   if (followupResponse) {
     followupResponse.classList.add("is-hidden");
   }
-  if (followupAnswer) {
-    followupAnswer.textContent = "-";
+  if (followupThread) {
+    followupThread.innerHTML = "";
   }
 
   resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -508,8 +706,21 @@ if (followupForm) {
       return;
     }
 
-    followupAnswer.textContent = buildFollowupAnswer(question, latestFormData, latestResult);
+    const answer = buildFollowupAnswer(question, latestFormData, latestResult);
+    const track = detectFollowupTrack(question);
+    followupHistory.push({ question, answer, track });
+    renderFollowupThread();
     followupResponse.classList.remove("is-hidden");
+    renderFollowupSuggestions(
+      { ...latestFormData, focus: track === "overall" ? latestFormData.focus : track },
+      latestResult,
+    );
+    const nextPrompts = buildNextFollowupPrompts(track, latestResult);
+    if (followupInput) {
+      followupInput.value = "";
+      followupInput.placeholder = nextPrompts[0];
+      followupInput.focus();
+    }
     followupResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 }
