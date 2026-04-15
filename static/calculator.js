@@ -356,6 +356,11 @@ function buildFollowupAnswer(question, formData, result) {
   const careerHit = /工作|事业|岗位|升职|职业|跳槽|换工作|公司|发展/.test(q);
   const financeHit = /财|钱|收入|副业|赚钱|存款|开销|花销|投资|负债/.test(q);
   const timeHit = /时辰|出生时间|时段|几点|校准|模糊时间|晚上|早上|中午|下午/.test(q);
+  const expressionHit = /想法|表达|说出来|输出|落到什么地方|不算白费|判断/.test(q);
+  const themeHit = /主题|先看清|先看什么|主轴|底色|核心/.test(q);
+  const burnoutHit = /内耗|发紧|消耗|累|撑着|太用力|为什么这么累/.test(q);
+  const securityHit = /安全感|被看见|需求|回应|确定感|什么关系适合/.test(q);
+  const changeHit = /变化|未来两年|未来三年|接下来|变化重心|会发生什么/.test(q);
 
   const relationshipNeed = (() => {
     if (dominantTenGod.includes("印")) return "确定感和稳定回应";
@@ -450,6 +455,64 @@ function buildFollowupAnswer(question, formData, result) {
     : geju.includes("伤") || geju.includes("食")
       ? "这类问题，还是先回到命盘本身，看哪一层想法、表达和判断最强。"
       : "这类问题，还是先回到命盘本身，看眼下真正被推到前面的主题是什么。";
+  if (themeHit) {
+    const structure = `先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以真正被推到前面的，不是单一一件事，而是一层做事方式和人生重心。`;
+    const timing = `${currentDaYun}这一步，本来就在慢慢把一层主题推到台前。${annualLead}`;
+    const close = dominantTenGod.includes("印")
+      ? "顺着这张盘看，眼下最该先看清的，其实是哪些选择会让心里更定，哪些会让那杆秤越压越紧。"
+      : dominantTenGod.includes("食") || dominantTenGod.includes("伤")
+        ? "顺着这张盘看，眼下最该先看清的，是判断和表达该落在哪个方向，才不会一直空转。"
+        : "顺着这张盘看，眼下最该先看清的，是哪一层现实安排正在决定后面的节奏。";
+    return `${opener} ${structure} ${patternLine} ${timing} ${close}`;
+  }
+
+  if (expressionHit) {
+    const expressionAxis = dominantTenGod.includes("食") || dominantTenGod.includes("伤")
+      ? "表达、判断和输出本来就是这张盘较强的一面"
+      : dominantTenGod.includes("印")
+        ? "这张盘先强的是理解和判断，表达往往慢半步"
+        : "这张盘的表达不是没有，而是更挑场合和对象";
+    const timing = dominantTenGod.includes("食") || dominantTenGod.includes("伤")
+      ? "所以最不算白费的地方，往往不是只停在想明白，而是把想法落进能产生成果的位置。"
+      : dominantTenGod.includes("印")
+        ? "所以真正适合的，不是被催着立刻说很多，而是在有空间、有秩序的环境里把判断慢慢讲透。"
+        : "所以最适合这张盘的，不是硬着头皮到处表态，而是在能接住分寸和质量的地方开口。";
+    const close = dominantTenGod.includes("食") || dominantTenGod.includes("伤")
+      ? "更细一点地问，可以直接落到工作、关系或合作场景里，看哪一种输出最能换来结果。"
+      : "如果继续往下问，最值得收窄到一个具体场景：工作里说、关系里说，还是该先写下来再说。";
+    return `这类问题，重点就在命盘里那股“想明白之后，力气该往哪用”的地方。先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼。${expressionAxis} ${timing} ${close}`;
+  }
+
+  if (burnoutHit) {
+    const burnoutAxis = dominantElement === "土"
+      ? "很多累，不是事情已经坏了，而是心里先把责任和后果都扛上来了。"
+      : dominantElement === "水"
+        ? "很多累，不在外面，而在心里一直转，想停又停不下来。"
+        : dominantTenGod.includes("印")
+          ? "很多累，来自那杆秤一直在衡量稳不稳、值不值。"
+          : "很多累，不是没能力，而是容易先把自己顶上去。";
+    const timing = `${currentDaYun}这一步，会把这一层感觉放大。${annualLead}`;
+    const close = "真要顺着这张盘继续看，最值得问的不是还要不要继续扛，而是哪一种环境能先把这口气放下来。";
+    return `内耗这类问题，不能只看事情多不多，还是要看命盘最容易发紧的地方在哪里。先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼。${burnoutAxis} ${timing} ${close}`;
+  }
+
+  if (securityHit) {
+    const timing = `${currentDaYun}这一步，也会把关系里的需求感和回应感放得更明显。${annualLead}`;
+    const close = dominantTenGod.includes("印")
+      ? "所以这张盘真正要的，不是表面热情，而是能让戒备慢慢放下来的回应。"
+      : dominantTenGod.includes("官") || dominantTenGod.includes("杀")
+        ? "所以这张盘真正要的，不是嘴上承诺，而是责任感和稳定度能不能落到日常里。"
+        : "所以这张盘真正要的，不是一时上头，而是相处下来能不能不消耗。";
+    return `这类问题，要先回到关系本身在命盘里是怎么落的。先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以关系里真正要紧的，不是热闹，而是${relationshipNeed}。 ${timing} ${close}`;
+  }
+
+  if (changeHit) {
+    const close = currentDaYun
+      ? `${currentDaYun}这一步已经在起作用，所以变化不会只是表面换一件事，更像是把原先拖着没定的部分慢慢逼出来。`
+      : "这类变化更多还是顺着大方向慢慢显出来，不是一夜之间翻盘。";
+    return `问未来变化，最怕把所有东西揉成一句好不好。先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以未来两三年的变化重心，多半还是围着这组力量在转。${result.analysis.changeArea} ${close}`;
+  }
+
   const structure = `先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以很多事都不是只看顺不顺，而是看这件事会把状态带向更稳，还是更紧。`;
   const timing = `${currentDaYun}这一步，本来就在慢慢把一层主题推到台前。${annualLead}`;
   const close = dominantTenGod.includes("印")
