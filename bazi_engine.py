@@ -118,6 +118,98 @@ GEJU_RULES = {
     "伤官": {"label": "伤官格", "rule": "月支藏伤官透出。主才华外放，需注意伤官见官。", "source": "《三命通会》"},
 }
 
+TIAN_YI_GUI_REN = {
+    "甲": {"丑", "未"},
+    "乙": {"子", "申"},
+    "丙": {"亥", "酉"},
+    "丁": {"亥", "酉"},
+    "戊": {"丑", "未"},
+    "己": {"子", "申"},
+    "庚": {"丑", "未"},
+    "辛": {"寅", "午"},
+    "壬": {"卯", "巳"},
+    "癸": {"卯", "巳"},
+}
+
+WEN_CHANG_GUI_REN = {
+    "甲": "巳",
+    "乙": "午",
+    "丙": "申",
+    "丁": "酉",
+    "戊": "申",
+    "己": "酉",
+    "庚": "亥",
+    "辛": "子",
+    "壬": "寅",
+    "癸": "卯",
+}
+
+BRANCH_GROUPS = {
+    "申子辰": {"申", "子", "辰"},
+    "寅午戌": {"寅", "午", "戌"},
+    "亥卯未": {"亥", "卯", "未"},
+    "巳酉丑": {"巳", "酉", "丑"},
+}
+
+PEACH_BLOSSOM = {"申子辰": "酉", "寅午戌": "卯", "亥卯未": "子", "巳酉丑": "午"}
+YI_MA = {"申子辰": "寅", "寅午戌": "申", "亥卯未": "巳", "巳酉丑": "亥"}
+HUA_GAI = {"申子辰": "辰", "寅午戌": "戌", "亥卯未": "未", "巳酉丑": "丑"}
+HONG_LUAN_BY_YEAR_ZHI = {
+    "子": "卯",
+    "丑": "寅",
+    "寅": "丑",
+    "卯": "子",
+    "辰": "亥",
+    "巳": "戌",
+    "午": "酉",
+    "未": "申",
+    "申": "未",
+    "酉": "午",
+    "戌": "巳",
+    "亥": "辰",
+}
+TIAN_XI_BY_YEAR_ZHI = {
+    "子": "酉",
+    "丑": "申",
+    "寅": "未",
+    "卯": "午",
+    "辰": "巳",
+    "巳": "辰",
+    "午": "卯",
+    "未": "寅",
+    "申": "丑",
+    "酉": "子",
+    "戌": "亥",
+    "亥": "戌",
+}
+TIAN_DE_BY_MONTH_ZHI = {
+    "寅": "丁",
+    "卯": "申",
+    "辰": "壬",
+    "巳": "辛",
+    "午": "亥",
+    "未": "甲",
+    "申": "癸",
+    "酉": "寅",
+    "戌": "丙",
+    "亥": "乙",
+    "子": "巳",
+    "丑": "庚",
+}
+YUE_DE_BY_MONTH_GROUP = {"寅午戌": "丙", "申子辰": "壬", "亥卯未": "甲", "巳酉丑": "庚"}
+
+SHEN_SHA_DETAILS = {
+    "天乙贵人": {"meaning": "更容易逢到帮手、贵人和转圜余地。", "tone": "贵人助力"},
+    "文昌贵人": {"meaning": "偏学习力、理解力、表达力和脑子清亮。", "tone": "思路清楚"},
+    "天德贵人": {"meaning": "遇事更容易有缓冲，不至于一路顶到底。", "tone": "逢凶有缓"},
+    "月德贵人": {"meaning": "人际里更容易逢到善意、体谅和顺手的助力。", "tone": "关系软着落"},
+    "桃花": {"meaning": "更偏人缘、吸引力、才艺感和被注意到的场。", "tone": "人缘与吸引"},
+    "驿马": {"meaning": "更偏变动、奔波、迁移和节奏转换。", "tone": "变动流动"},
+    "华盖": {"meaning": "更偏独处、学术、审美、精神性和想得深。", "tone": "独思与审美"},
+    "红鸾": {"meaning": "更偏关系靠近、缘分推进和心动的气。", "tone": "缘分靠近"},
+    "天喜": {"meaning": "更偏喜庆、人情热度和关系里容易有回应。", "tone": "喜气与回应"},
+}
+
 AURA_THEMES = {
     "木": {
         "themeName": "Forest Bloom",
@@ -310,6 +402,7 @@ def _pillar_payload(
             "wuxing": "",
             "nayin": "",
             "diShi": "",
+            "shenSha": [],
         }
 
     return {
@@ -323,7 +416,104 @@ def _pillar_payload(
         "wuxing": wuxing,
         "nayin": nayin,
         "diShi": di_shi,
+        "shenSha": [],
     }
+
+
+def _branch_group(branch: str) -> str | None:
+    for name, branches in BRANCH_GROUPS.items():
+        if branch in branches:
+            return name
+    return None
+
+
+def _pillar_shensha(
+    year_zhi: str,
+    month_zhi: str,
+    day_zhi: str,
+    day_gan: str,
+    pillar_gan: str,
+    pillar_zhi: str,
+) -> list[str]:
+    if not pillar_zhi and not pillar_gan:
+        return []
+
+    names: list[str] = []
+    for anchor in {year_zhi, day_zhi}:
+        group = _branch_group(anchor)
+        if not group:
+            continue
+        if pillar_zhi == PEACH_BLOSSOM[group]:
+            names.append("桃花")
+        if pillar_zhi == YI_MA[group]:
+            names.append("驿马")
+        if pillar_zhi == HUA_GAI[group]:
+            names.append("华盖")
+
+    if pillar_zhi in TIAN_YI_GUI_REN.get(day_gan, set()):
+        names.append("天乙贵人")
+    if pillar_zhi == WEN_CHANG_GUI_REN.get(day_gan):
+        names.append("文昌贵人")
+    if pillar_zhi == HONG_LUAN_BY_YEAR_ZHI.get(year_zhi):
+        names.append("红鸾")
+    if pillar_zhi == TIAN_XI_BY_YEAR_ZHI.get(year_zhi):
+        names.append("天喜")
+
+    tian_de_target = TIAN_DE_BY_MONTH_ZHI.get(month_zhi)
+    if tian_de_target:
+        if tian_de_target in VALID_GAN and pillar_gan == tian_de_target:
+            names.append("天德贵人")
+        elif tian_de_target in VALID_ZHI and pillar_zhi == tian_de_target:
+            names.append("天德贵人")
+
+    month_group = _branch_group(month_zhi)
+    yue_de_target = YUE_DE_BY_MONTH_GROUP.get(month_group or "")
+    if yue_de_target and pillar_gan == yue_de_target:
+        names.append("月德贵人")
+
+    deduped: list[str] = []
+    for item in names:
+        if item not in deduped:
+            deduped.append(item)
+    return deduped
+
+
+def _attach_shensha(pillars: list[dict[str, Any]], day_gan: str) -> list[dict[str, Any]]:
+    year_zhi = pillars[0]["zhi"] if pillars else ""
+    month_zhi = pillars[1]["zhi"] if len(pillars) > 1 else ""
+    day_zhi = pillars[2]["zhi"] if len(pillars) > 2 else ""
+    for pillar in pillars:
+        pillar["shenSha"] = _pillar_shensha(
+            year_zhi,
+            month_zhi,
+            day_zhi,
+            day_gan,
+            pillar.get("gan", ""),
+            pillar.get("zhi", ""),
+        )
+    return pillars
+
+
+def _build_shensha_summary(pillars: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    summary: dict[str, dict[str, Any]] = {}
+    for pillar in pillars:
+        for name in pillar.get("shenSha", []):
+            if name not in summary:
+                detail = SHEN_SHA_DETAILS.get(name, {})
+                summary[name] = {
+                    "name": name,
+                    "meaning": detail.get("meaning", "这一层更适合当辅助线索来看。"),
+                    "tone": detail.get("tone", "辅助线索"),
+                    "pillars": [],
+                }
+            summary[name]["pillars"].append(pillar.get("label", ""))
+
+    preferred_order = ["天乙贵人", "天德贵人", "月德贵人", "文昌贵人", "红鸾", "天喜", "桃花", "驿马", "华盖"]
+    items = list(summary.values())
+    items.sort(key=lambda item: preferred_order.index(item["name"]) if item["name"] in preferred_order else 99)
+    for item in items:
+        item["pillars"] = [label for label in item["pillars"] if label]
+    return items
 
 
 def _compute_element_scores(pillars: list[dict[str, Any]]) -> dict[str, int]:
@@ -526,6 +716,7 @@ def _pillar_from_ganzhi(label: str, ganzhi: str, day_gan: str) -> dict[str, Any]
         "wuxing": f"{STEM_ELEMENTS.get(gan, '')}{BRANCH_ELEMENTS.get(zhi, '')}" if gan and zhi else "",
         "nayin": LunarUtil.NAYIN.get(ganzhi, "") if ganzhi else "",
         "diShi": "",
+        "shenSha": [],
     }
 
 
@@ -571,6 +762,27 @@ def _build_analysis(
 
     def has_any(*targets: str) -> bool:
         return any(target in ten_god_names for target in targets)
+
+    def chart_signature() -> str:
+        if geju_label == "正官格" and has_any("偏印") and has_any("正官"):
+            return "rule-aware"
+        if geju_label == "正官格" and has_any("正印") and has_any("正官"):
+            return "steady-system"
+        if has_any("伤官") and has_any("正官"):
+            return "sharp-tension"
+        if has_any("食神") and has_any("财"):
+            return "output-to-value"
+        if has_any("偏印") and has_any("七杀"):
+            return "guarded-sense"
+        if head in {"偏印", "正印"}:
+            return "inner-first"
+        if head in {"伤官", "食神"}:
+            return "expression-first"
+        if head in {"正财", "偏财"}:
+            return "practical-first"
+        return "balanced-core"
+
+    signature = chart_signature()
 
     def geju_voice() -> str:
         if geju_label == "正官格":
@@ -623,6 +835,16 @@ def _build_analysis(
         return f"事业这块更讲究方向对不对，而不是只看眼前顺不顺。{dayun_text}把一层现实主题推到面前，合适的做法往往是先理清重心，再选真正能积累的位置。"
 
     def public_persona_line() -> str:
+        if signature == "rule-aware":
+            return "给人的感觉往往是稳，心里也有数。不是会被一句话轻易带着走的类型，看起来安静，实则一直在衡量轻重。"
+        if signature == "steady-system":
+            return "给人的第一感觉多半是靠谱、规整、不轻浮。很多人会先觉得这张盘有分寸，真正熟了才会看见里面那股很硬的判断。"
+        if signature == "sharp-tension":
+            return "给人的感觉不会太木，也不会太软。脑子快，反应也快，很多事一眼就能看出哪里不对，所以不太容易被敷衍。"
+        if signature == "output-to-value":
+            return "给人的感觉更像清醒、会算账，也会看结果。不是冷，而是天然知道什么值得花力气，什么不值得。"
+        if signature == "guarded-sense":
+            return "给人的感觉往往有一点距离感，不是不好接近，而是不会立刻把底牌翻开。先看清，再靠近，是这张盘很自然的习惯。"
         if head in {"偏印", "正印"}:
             return "给人的感觉多半是稳，不吵不闹，但心里一直在看轻重。表面不一定强势，真正相处下来会发现边界感很清楚。"
         if head in {"伤官", "食神"}:
@@ -634,6 +856,16 @@ def _build_analysis(
         return "给人的感觉不是张扬那一类，更像先看环境，再决定自己怎么站位。"
 
     def intimacy_line() -> str:
+        if signature == "rule-aware":
+            return "关系里最在意的，不是热不热闹，而是这段关系到底靠不靠谱。会先看对方稳不稳、有没有担当、回不回应，所以慢热很正常。"
+        if signature == "steady-system":
+            return "关系里更容易认真看长期。不是不会心动，而是心动之后会立刻想到两个人能不能往后走、能不能把日子过稳。"
+        if signature == "sharp-tension":
+            return "关系里很怕话说得漂亮，落下来却空。表面可能还能忍，但心里其实会一直记得哪里没被接住、哪里说了不算。"
+        if signature == "output-to-value":
+            return "关系里不太吃虚的，更看重现实感和兑现。与其反复试探，更在意对方到底有没有诚意把关系落到日常里。"
+        if signature == "guarded-sense":
+            return "关系里不会一下子把心交出去，更像先观察，再决定慢慢给多少。真在意了会很认真，但不太会把脆弱立刻摆在外面。"
         if has_any("正官", "七杀") and has_any("偏印"):
             return "关系里最看重的，不是表面的热闹，而是这个人能不能让心里那口气慢慢放下来。会先看对方稳不稳、说话算不算，也因此更慢热。"
         if has_any("正官", "七杀") and has_any("正印"):
@@ -689,23 +921,61 @@ def _build_analysis(
         return f"{horizon_text}更值得看的，不只是顺不顺，而是哪一层主题会被先推出来。先看这步大运给了什么底色，再看流年是来催、来压，还是来打开新的口子。"
 
     def healing_parts() -> list[str]:
-        if is_weak:
+        if signature == "rule-aware":
             parts = [
-                f"这张盘先不用急着往重了看。{stem_text}眼下偏弱，很多时候不是没主见，而是外面的事还没发生，心里先把轻重缓急都过了一遍。",
+                f"这张盘最显眼的地方，不是软，也不是乱，而是心里一直有一把尺。{stem_text}落在{geju_label}里，又带着 {pair} 这层气，所以很多事第一反应不是冲出去，而是先判断值不值得、稳不稳、后面会不会失控。",
+                "真正卡人的地方，也常常不在外面，而在心里那套标准一直开着。事情还没发生完，轻重、分寸、后果已经先在心里走了一遍，于是看起来像慢，实则是没办法随便。",
+                f"这类盘最怕的不是吃苦，而是一直硬撑着把自己放进一个必须懂事、必须稳住的位置。反而越顺着 {favorable_text} 这类能给回应、能让状态松一点的环境去走，很多原本顶着的地方才会慢慢放下来。",
+                "所以这段时间先不用急着给人生下重注。先看哪件事值得认真，哪件事只是习惯性地替自己多扛了一层，盘面就会比现在清楚得多。",
+            ]
+        elif signature == "steady-system":
+            parts = [
+                f"这张盘的底色不是飘的。{stem_text}落在{geju_label}里，里头又有 {pair} 这组力量，所以心里天然会偏向完整、妥当、能不能长久站住。",
+                "很多时候不是不知道自己要什么，而是太清楚一件事如果真的往前走，后面会牵出多少现实安排。于是外面看起来像稳，里面其实一直在默默做取舍。",
+                f"这类盘最需要的，不是再被催着快一点，而是有一个能把节奏放稳的环境。顺着 {favorable_text} 去养这张盘，比一味逼自己马上拿出标准答案，更容易把真正的判断带出来。",
+                "先让手上的生活、关系或工作有一点安稳感，再决定下一步往哪边走，很多原本纠着的地方反而会自己松开。",
+            ]
+        elif signature == "sharp-tension":
+            parts = [
+                f"这张盘不是没主见，反而是主见来得很快。{stem_text}配上 {pair} 这组气，很多事一眼就能看出问题，也很难真心接受太笨、太拖、太没边界的处理方式。",
+                "真正辛苦的地方在于，心里一边想按自己的判断来，一边又并不是真的想把局面搅乱。外面若太混乱，会烦；外面若太死板，也一样会闷。",
+                f"所以这张盘最需要的，不是压住自己，而是找到能把判断用出去的地方。顺着 {favorable_text} 这股气走，表达、执行和现实落点能接上，心里的拧巴才会少很多。",
+                "与其一直问自己是不是太挑，不如先看眼前这件事到底有没有值得认真投入的空间。看清这一层，很多情绪会比硬忍更快过去。",
+            ]
+        elif signature == "output-to-value":
+            parts = [
+                f"这张盘的路子不太像空想，更多是边看边算、边走边落。{stem_text}和 {pair} 这组气放在一起，脑子里常常会先出现结果感：做了以后能不能换来位置、回报、现实上的改善。",
+                "所以心里真正不舒服的时候，往往不是事情难，而是花了很多力气却没有被兑现。只要感觉一直在空转，情绪和耐心都会比平时掉得快。",
+                f"这类盘最养人的，不是喊口号，而是让付出能看见去处。顺着 {favorable_text} 去找那种做一点就能积一点的环境，比反复证明自己更合适。",
+                "先把力气用在能累出结果的地方，盘里的很多焦躁就会自己降下去。后面的选择，也会比现在更容易分清轻重。",
+            ]
+        elif signature == "guarded-sense":
+            parts = [
+                f"这张盘最先被看见的，不是锋芒，而是警觉。{stem_text}带着 {pair} 这层气，很多事情会本能地先看风险、先看后果，再决定要不要真正下场。",
+                "这不是胆小，反而是心里太清楚一旦认真了，就不会只做表面功夫。所以比起轻易投入，更习惯先把局面看透，把人的来路和心思摸清。",
+                f"这类盘最需要的，不是被催着相信，而是慢慢确认哪里真的安全。顺着 {favorable_text} 这股能让心气舒展的环境去走，很多本来绷着的地方才会一点点松开。",
+                "先别急着证明自己没有那么敏感。把真正让心里发紧的那件事看出来，比硬把自己推向热闹和果断更有用。",
+            ]
+        elif is_weak:
+            parts = [
+                f"这张盘眼下最累人的，不是事情真有多难，而是心里总会先替还没发生的部分多想一层。{stem_text}偏弱时，外面的风一动，心里就会先起波澜，所以看起来像想得多，其实是在替自己提前挡风险。",
                 f"命盘里更显眼的是 {pair}，所以卡住的地方，常常不在事情表面，而在心里那杆秤一直衡量稳不稳、值不值。越想把自己放在一个万无一失的位置，反而越容易发紧。",
                 f"真正养这张盘的，是 {favorable_text} 这一类能带来回应、流动和松动的环境。先把状态理顺，比急着逼自己做漂亮选择更重要。",
+                "眼下最要紧的，不是把答案赶出来，而是先把心里的那口气放匀。状态一松，很多判断反而会更准。",
             ]
         elif is_strong:
             parts = [
                 f"这张盘底子并不轻，也不是随便就会被带跑的路子。{stem_text}眼下偏旺，很多事心里本来就有一套判断，所以真正难的不是看不清，而是愿不愿意放下一点太用力的控制感。",
                 f"命盘里以 {pair} 更显眼，说明这股劲不是虚张声势，而是心里真的有标准、有要求，也不喜欢被低质量的人和事来回磨。",
                 f"更适合这张盘的，不是把自己压得更紧，而是把力气放到真正值得的地方。顺着 {favorable_text} 的气去走，很多原本僵着的地方，反而会慢慢松开。",
+                "先把真正重要的那一件事挑出来，别什么都自己先顶住。盘里的力气用对了，反而不会一直累。",
             ]
         else:
             parts = [
                 f"这张盘难得的地方，在于不偏激。{stem_text}落在比较中和的位置，很多时候既感受得到外面的推力，也留得住自己的判断。",
                 f"命盘里以 {pair} 更显眼，所以真正要紧的，不是去找一个绝对正确的答案，而是看眼前这件事到底是把状态推向更稳，还是推向更累。",
                 f"顺着 {favorable_text} 去养状态，这张盘反而更容易把自己的节奏慢慢找回来。很多事不必急，先把心里的秤放平，后面的路自然会清楚一些。",
+                "眼下先不必抢着下结论。把手上最在意的那件事看清，很多后面的判断都会跟着顺下来。",
             ]
 
         if focus == "relationship":
@@ -801,8 +1071,10 @@ def calculate_bazi(payload: dict[str, Any]) -> dict[str, Any]:
             include=include_time,
         ),
     ]
+    pillars = _attach_shensha(pillars, eight_char.getDayGan())
 
     scores = _compute_element_scores(pillars)
+    shensha_summary = _build_shensha_summary(pillars)
     dominant_element = max(scores.items(), key=lambda item: item[1])[0]
     day_element = STEM_ELEMENTS[eight_char.getDayGan()]
     own_score = scores[day_element]
@@ -861,6 +1133,7 @@ def calculate_bazi(payload: dict[str, Any]) -> dict[str, Any]:
             "calculatedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         },
         "pillars": pillars,
+        "shenShaSummary": shensha_summary,
         "dayMaster": {
             "stem": eight_char.getDayGan(),
             "branch": eight_char.getDayZhi(),
@@ -909,8 +1182,10 @@ def calculate_bazi_by_pillars(payload: dict[str, Any]) -> dict[str, Any]:
         _pillar_from_ganzhi("日柱", day_pillar, day_gan),
         _pillar_from_ganzhi("时柱", time_pillar, day_gan) if len(time_pillar) == 2 else _pillar_payload("时柱", "", "", "", "", [], [], "", "", "", include=False),
     ]
+    pillars = _attach_shensha(pillars, day_gan)
 
     scores = _compute_element_scores(pillars)
+    shensha_summary = _build_shensha_summary(pillars)
     dominant_element = max(scores.items(), key=lambda item: item[1])[0]
     day_element = STEM_ELEMENTS[day_gan]
     own_score = scores[day_element]
@@ -954,6 +1229,7 @@ def calculate_bazi_by_pillars(payload: dict[str, Any]) -> dict[str, Any]:
             "calculatedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         },
         "pillars": pillars,
+        "shenShaSummary": shensha_summary,
         "dayMaster": {
             "stem": day_gan,
             "branch": day_pillar[1],

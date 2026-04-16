@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Huninn&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./static/styles.css?v=20260414f" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260416i" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -132,15 +132,31 @@
                   </section>
 
                   <section class="step-panel" data-step-panel="2">
-                    <label>
-                      <span>优先想看</span>
-                      <select name="focus" autocomplete="off">
-                        <option value="overall">综合命盘</option>
-                        <option value="career">事业财运</option>
-                        <option value="relationship">感情婚姻</option>
-                        <option value="annual">年度流年</option>
-                      </select>
-                    </label>
+                    <fieldset class="choice-group">
+                      <legend>优先想看</legend>
+                      <div class="choice-grid">
+                        <label class="choice-card">
+                          <input type="radio" name="focus" value="overall" checked />
+                          <span>综合命盘</span>
+                          <small>先看整张盘的底色、主轴和眼下这步运。</small>
+                        </label>
+                        <label class="choice-card">
+                          <input type="radio" name="focus" value="career" />
+                          <span>事业财运</span>
+                          <small>更看工作位置、赚钱方式和现实推进力。</small>
+                        </label>
+                        <label class="choice-card">
+                          <input type="radio" name="focus" value="relationship" />
+                          <span>感情婚姻</span>
+                          <small>更看关系需求、相处模式和回应感。</small>
+                        </label>
+                        <label class="choice-card">
+                          <input type="radio" name="focus" value="annual" />
+                          <span>年度流年</span>
+                          <small>更看接下来几年会被推到眼前的主题。</small>
+                        </label>
+                      </div>
+                    </fieldset>
                     <label>
                       <span>想看的时间范围</span>
                       <select name="horizon" autocomplete="off">
@@ -200,15 +216,31 @@
                     <span>时柱</span>
                     <input name="timePillar" type="text" placeholder="例如：庚戌，不知道可留空…" autocomplete="off" />
                   </label>
-                  <label>
-                    <span>优先想看</span>
-                    <select name="focus" autocomplete="off">
-                      <option value="overall">综合命盘</option>
-                      <option value="career">事业财运</option>
-                      <option value="relationship">感情婚姻</option>
-                      <option value="annual">年度流年</option>
-                    </select>
-                  </label>
+                  <fieldset class="choice-group">
+                    <legend>优先想看</legend>
+                    <div class="choice-grid">
+                      <label class="choice-card">
+                        <input type="radio" name="focus" value="overall" checked />
+                        <span>综合命盘</span>
+                        <small>先看整张盘的底色、主轴和眼下这步运。</small>
+                      </label>
+                      <label class="choice-card">
+                        <input type="radio" name="focus" value="career" />
+                        <span>事业财运</span>
+                        <small>更看工作位置、赚钱方式和现实推进力。</small>
+                      </label>
+                      <label class="choice-card">
+                        <input type="radio" name="focus" value="relationship" />
+                        <span>感情婚姻</span>
+                        <small>更看关系需求、相处模式和回应感。</small>
+                      </label>
+                      <label class="choice-card">
+                        <input type="radio" name="focus" value="annual" />
+                        <span>年度流年</span>
+                        <small>更看接下来几年会被推到眼前的主题。</small>
+                      </label>
+                    </div>
+                  </fieldset>
                   <label>
                     <span>想看的时间范围</span>
                     <select name="horizon" autocomplete="off">
@@ -306,7 +338,7 @@
                   <article class="result-card wide glow-card hero-result-card">
                     <div class="card-header">
                       <h4>四柱与十神</h4>
-                      <p>天道有寒暖，地道有燥湿。四柱既列，命局中的干支与十神便自成章法。</p>
+                      <p>天道有寒暖，地道有燥湿。四柱既列，命局里的干支、十神与辅助神煞便能一层层看出轻重。这里补的是常用神煞：天乙贵人、文昌贵人、天德贵人、月德贵人、桃花、驿马、华盖、红鸾、天喜。</p>
                     </div>
                     <div class="table-wrap">
                       <table class="pillars-table">
@@ -316,12 +348,14 @@
                             <th>天干</th>
                             <th>地支</th>
                             <th>五行</th>
-                            <th>藏干 / 十神 / 纳音</th>
+                            <th>藏干 / 十神 / 纳音 / 神煞</th>
                           </tr>
                         </thead>
                         <tbody id="pillars-body"></tbody>
                       </table>
                     </div>
+                    <p class="soft-copy">神煞可以先当辅助线索来看，比如桃花、红鸾、天喜更偏人缘、关系和缘分场，驿马更偏变动和奔波，天乙、文昌、天德、月德这类更像有人提携、脑子清亮或容易逢到顺手的助力。它们不单独定吉凶，还是要放回整张盘里一起看。不是每一柱都会见到贵人，没有写出来也不代表不好。</p>
+                    <div class="shen-sha-summary" id="shen-sha-summary"></div>
                   </article>
 
                   <article class="result-card glow-card">
@@ -413,6 +447,6 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260414l"></script>
+    <script src="./static/calculator.js?v=20260416i"></script>
   </body>
 </html>
