@@ -13,10 +13,10 @@
   --earth: #ffe5c7;
   --metal: #e9e1ff;
   --water: #dcefff;
-  --font-display: "Plus Jakarta Sans", "Noto Sans SC", sans-serif;
-  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-ui: "Huninn", "Plus Jakarta Sans", "Noto Sans SC", sans-serif;
-  --font-poetic: "Noto Serif SC", serif;
+  --font-display: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  --font-body: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  --font-ui: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  --font-poetic: "STSong", "Songti SC", "SimSun", "Noto Serif CJK SC", "Source Han Serif SC", serif;
   --space-16: 16px;
   --space-20: 20px;
   --space-24: 24px;
