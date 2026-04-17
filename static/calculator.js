@@ -24,6 +24,7 @@ const dreamInput = document.getElementById("dream-input");
 const dreamResponse = document.getElementById("dream-response");
 const dreamThread = document.getElementById("dream-thread");
 const dreamQuotaNote = document.getElementById("dream-quota-note");
+const dreamFeedback = document.getElementById("dream-feedback");
 const birthdayInput = document.getElementById("birthday-input");
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
@@ -44,6 +45,12 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function setDreamFeedback(message = "") {
+  if (!dreamFeedback) return;
+  dreamFeedback.textContent = message;
+  dreamFeedback.classList.toggle("is-hidden", !message);
 }
 
 function setStep(stepIndex) {
@@ -2227,6 +2234,7 @@ function renderResult(formData, result) {
   if (dreamInput) {
     dreamInput.value = "";
   }
+  setDreamFeedback("");
   updateDreamQuotaUI();
 
   resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2359,7 +2367,13 @@ if (followupForm) {
 if (dreamForm) {
   dreamForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (!latestResult || !latestFormData || !dreamInput) return;
+    if (!dreamInput) return;
+    setDreamFeedback("");
+
+    if (!latestResult || !latestFormData) {
+      setDreamFeedback("请先完成命盘测算，再把梦放回这张盘里看。");
+      return;
+    }
 
     const question = dreamInput.value.trim();
     if (!question) {
@@ -2370,24 +2384,34 @@ if (dreamForm) {
 
     const remaining = getDreamRemaining();
     if (remaining <= 0) {
+      setDreamFeedback("今日 3 次免费解梦已经用完，明天还能继续来问。");
       updateDreamQuotaUI();
       return;
     }
 
     if (!consumeDreamQuota()) {
+      setDreamFeedback("今日免费次数已用完，请明天再来继续解梦。");
       updateDreamQuotaUI();
       return;
     }
 
-    const answer = buildDreamAnswer(question, latestFormData, latestResult);
-    dreamHistory.push({ question, answer });
-    renderDreamThread();
-    if (dreamResponse) {
-      dreamResponse.classList.remove("is-hidden");
-      dreamResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    try {
+      const answer = buildDreamAnswer(question, latestFormData, latestResult);
+      if (!Array.isArray(answer) || !answer.length) {
+        throw new Error("这场梦还没顺利翻译出来，请换一种更具体的说法再试一次。");
+      }
+
+      dreamHistory.push({ question, answer });
+      renderDreamThread();
+      if (dreamResponse) {
+        dreamResponse.classList.remove("is-hidden");
+        dreamResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      dreamInput.value = "";
+      updateDreamQuotaUI();
+    } catch (error) {
+      setDreamFeedback(error.message || "这场梦暂时没能顺利解出来，试着把梦里最刺的一幕说得更具体一点。");
     }
-    dreamInput.value = "";
-    updateDreamQuotaUI();
   });
 }
 
