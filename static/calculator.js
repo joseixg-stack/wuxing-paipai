@@ -260,6 +260,14 @@ function getChartSignature(result) {
   return "balanced-core";
 }
 
+function pickVariantIndex(seed, count = 3) {
+  const text = String(seed || "");
+  let total = 0;
+  for (const char of text) total += char.charCodeAt(0);
+  const size = Math.max(1, count);
+  return total % size;
+}
+
 function getDominantProfile(result) {
   const dominant = result.tenGods?.dominant?.[0]?.name || "";
   const second = result.tenGods?.dominant?.[1]?.name || "";
@@ -514,8 +522,8 @@ function buildDreamAnswer(dreamText, formData, result) {
 
   const openingVariants = openingMap[theme.key] || openingMap.general;
   const chartVariants = chartMap[signature] || chartMap.balanced-core;
-  const opening = openingVariants[variantIndex(`dream-opening-${theme.key}`)];
-  const chartLine = chartVariants[variantIndex(`dream-chart-${theme.key}-${signature}`)];
+  const opening = openingVariants[pickVariantIndex(`dream-opening-${theme.key}-${signature}-${dreamText}`, openingVariants.length)];
+  const chartLine = chartVariants[pickVariantIndex(`dream-chart-${theme.key}-${signature}-${dreamText}`, chartVariants.length)];
 
   const poeticLead = (() => {
     const lines = {
@@ -529,7 +537,7 @@ function buildDreamAnswer(dreamText, formData, result) {
       general: ["浮生多梦，梦里最先亮出来的，往往正是白天最不肯直看的那一层。", "梦不必先当成征兆，更像一面水，照出心里最先动的地方。"] ,
     };
     const variants = lines[theme.key] || lines.general;
-    return variants[variantIndex(`dream-poetic-${theme.key}`)];
+    return variants[pickVariantIndex(`dream-poetic-${theme.key}-${signature}-${dreamText}`, variants.length)];
   })();
 
   return [
