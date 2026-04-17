@@ -1,9 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>测算结果预览 | 五行拍拍</title>
+    <title>结果预览 | 五行拍拍</title>
+    <meta
+      name="description"
+      content="五行拍拍结果预览页，用固定示例快速查看命盘结果、温柔解读、神煞、梦境解读与继续问答。"
+    />
     <link rel="stylesheet" href="./static/styles.css?v=20260417e" />
   </head>
   <body>
@@ -18,7 +22,7 @@
         <section class="page-topbar glow-card">
           <a class="button ghost" href="./index.html">返回首页</a>
           <div class="page-topbar-copy">
-            <h1>测算结果预览</h1>
+            <h1>结果参考页</h1>
           </div>
         </section>
 
@@ -31,9 +35,9 @@
                 </div>
               </div>
 
-              <div class="result-empty is-hidden" id="result-empty"></div>
+              <div class="result-empty" id="result-empty"></div>
 
-              <div class="result-content" id="result-content">
+              <div class="result-content is-hidden" id="result-content">
                 <section class="summary-band">
                   <div class="summary-card glow-card">
                     <p class="summary-label">命主</p>
@@ -229,7 +233,12 @@
                       <form class="followup-form" id="followup-form">
                         <label>
                           <span>现在最想继续问什么</span>
-                          <textarea id="followup-input" rows="4" placeholder="例如：我接下来两年更适合换工作，还是先稳住？" required></textarea>
+                          <textarea
+                            id="followup-input"
+                            rows="4"
+                            placeholder="例如：我接下来两年更适合换工作，还是先稳住？"
+                            required
+                          ></textarea>
                         </label>
                         <div class="followup-actions">
                           <button type="submit" class="button primary">继续看看</button>
@@ -269,24 +278,34 @@
     <script>
       const previewFormData = {
         name: "张三",
-        gender: "female",
-        status: "alive",
-        birthday: "20010129",
-        birthTime: "20:00",
-        timeRange: "exact",
+        former_name: "没有",
+        gender: "女",
         birthplace: "上海市",
-        focus: "relationship",
-        horizon: "3",
+        status: "在世",
+        birthday: "2001-01-29",
+        birth_time: "20:00",
+        time_range: ""
       };
 
       fetch("./api/bazi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(previewFormData),
+        body: JSON.stringify(previewFormData)
       })
         .then((response) => response.json())
         .then((result) => {
-          window.renderBaziPreview(previewFormData, result);
+          if (result.error) {
+            throw new Error(result.error);
+          }
+          if (window.renderBaziPreview) {
+            window.renderBaziPreview(previewFormData, result);
+          }
+        })
+        .catch((error) => {
+          const empty = document.getElementById("result-empty");
+          if (empty) {
+            empty.textContent = `结果预览加载失败：${error.message}`;
+          }
         });
     </script>
   </body>
