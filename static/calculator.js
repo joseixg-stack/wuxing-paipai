@@ -17,6 +17,13 @@ const followupForm = document.getElementById("followup-form");
 const followupInput = document.getElementById("followup-input");
 const followupResponse = document.getElementById("followup-response");
 const followupThread = document.getElementById("followup-thread");
+const followupUpgrade = document.getElementById("followup-upgrade");
+const dreamUnlockButtons = Array.from(document.querySelectorAll("[data-dream-unlock]"));
+const dreamForm = document.getElementById("dream-form");
+const dreamInput = document.getElementById("dream-input");
+const dreamResponse = document.getElementById("dream-response");
+const dreamThread = document.getElementById("dream-thread");
+const dreamQuotaNote = document.getElementById("dream-quota-note");
 const birthdayInput = document.getElementById("birthday-input");
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
@@ -25,6 +32,19 @@ let activeStep = 0;
 let latestResult = null;
 let latestFormData = null;
 let followupHistory = [];
+let dreamHistory = [];
+
+const DREAM_DAILY_LIMIT = 3;
+const DREAM_STORAGE_KEY = "wuxing-paipai-dream-quota-v1";
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function setStep(stepIndex) {
   activeStep = Math.max(0, Math.min(stepIndex, stepPanels.length - 1));
@@ -95,6 +115,71 @@ function formatBirthdayValue(rawValue) {
   if (digits.length <= 4) return digits;
   if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
   return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+}
+
+function getTodayQuotaKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDreamQuotaState() {
+  try {
+    const raw = localStorage.getItem(DREAM_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    const today = getTodayQuotaKey();
+    if (!parsed || parsed.date !== today) {
+      return { date: today, used: 0 };
+    }
+    return { date: today, used: Number(parsed.used) || 0 };
+  } catch {
+    return { date: getTodayQuotaKey(), used: 0 };
+  }
+}
+
+function saveDreamQuotaState(state) {
+  try {
+    localStorage.setItem(DREAM_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // ignore storage errors and keep the page usable
+  }
+}
+
+function getDreamRemaining() {
+  const state = getDreamQuotaState();
+  return Math.max(0, DREAM_DAILY_LIMIT - state.used);
+}
+
+function consumeDreamQuota() {
+  const state = getDreamQuotaState();
+  if (state.used >= DREAM_DAILY_LIMIT) return false;
+  state.used += 1;
+  saveDreamQuotaState(state);
+  return true;
+}
+
+function updateDreamQuotaUI() {
+  if (!dreamQuotaNote || !dreamForm) return;
+  const remaining = getDreamRemaining();
+  if (remaining > 0) {
+    dreamQuotaNote.textContent = `今日还可免费解梦 ${remaining} 次。`;
+    if (dreamInput) dreamInput.disabled = false;
+    const submitButton = dreamForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "解读这个梦";
+    }
+  } else {
+    dreamQuotaNote.textContent = "今日 3 次免费解梦已经用完，明天还能继续来问。";
+    if (dreamInput) dreamInput.disabled = true;
+    const submitButton = dreamForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "今日次数已用完";
+    }
+  }
 }
 
 function getFeedbackElement(targetForm) {
@@ -185,15 +270,15 @@ function buildHealingGlossary(result) {
   const currentDaYun = result.luck?.currentDaYun?.ganzhi || "";
 
   const baseMap = {
-    "rule-aware": `这张盘不是没主见，而是先把事情在心里过一遍。${dayMaster}落在${geju}里，做决定时会先看规矩到底有没有道理，所以很多时候不是慢，而是不愿意糊里糊涂答应。`,
-    "steady-system": `这张盘重的是稳和次序。很多事一上来不会先看热闹，而是先看值不值得长期放进去，所以在别人眼里常常会显得靠谱、能扛、也比较有边界。`,
-    "sharp-tension": `这张盘的厉害之处，不在表面强硬，而在心里同时有判断和标准。想法来得快，要求也高，所以真正累人的，常常不是外面拦着，而是心里那把尺先顶上去了。`,
-    "output-to-value": `这张盘不怕做事，怕的是做了却白做。很多机会都长在表达、执行、把事情做出结果的过程中，所以只要方向对了，越做越容易看到回头钱。`,
-    "guarded-sense": `这张盘表面不一定锋利，但里面的防线很清楚。很多事会先看风险，再决定要不要把心力和时间放进去，所以真正让状态松开的，不是催，而是确认感。`,
-    "inner-first": `这张盘先往里走。很多判断不会立刻说出来，而是先在心里慢慢成形，所以真正需要的，不是别人替着下决定，而是给一点时间把那股气理顺。`,
-    "expression-first": `这张盘的重点在“想法不能闷太久”。很多事一旦看明白，就会想表达、想推进、想把话说透，所以最怕的不是没能力，而是把心里那股劲耗在反复犹豫里。`,
-    "practical-first": `这张盘更讲实际。很多选择最后都会回到值不值、稳不稳、能不能落地，所以不是不愿意试，而是不想把时间花在一眼就站不住的地方。`,
-    "balanced-core": `这张盘不是只靠一股劲往前冲，而是几层力量一起在推。读这类盘，重点不在一句吉凶，而在先看现在最需要把哪一层想明白。`,
+    "rule-aware": `这张盘不是没主见，而是先把事情在心里过一遍。${dayMaster}落在${geju}里，做决定时会先看规矩到底有没有道理，所以很多时候不是慢，而是不愿意糊里糊涂答应。比如别人一句“先这样吧”，心里也会先把后面会不会失控想一遍。`,
+    "steady-system": `这张盘重的是稳和次序。很多事一上来不会先看热闹，而是先看值不值得长期放进去，所以在别人眼里常常会显得靠谱、能扛、也比较有边界。比如工作里更容易自然接住流程、责任和收尾这类位置。`,
+    "sharp-tension": `这张盘的厉害之处，不在表面强硬，而在心里同时有判断和标准。想法来得快，要求也高，所以真正累人的，常常不是外面拦着，而是心里那把尺先顶上去了。比如一件事还没开始，心里已经在想做到几分才算过关。`,
+    "output-to-value": `这张盘不怕做事，怕的是做了却白做。很多机会都长在表达、执行、把事情做出结果的过程中，所以只要方向对了，越做越容易看到回头钱。比如写出来、讲出来、做成作品，比闷着等更容易出成绩。`,
+    "guarded-sense": `这张盘表面不一定锋利，但里面的防线很清楚。很多事会先看风险，再决定要不要把心力和时间放进去，所以真正让状态松开的，不是催，而是确认感。比如关系里常常要先确认对方说话算数，心里才会慢慢放下那层劲。`,
+    "inner-first": `这张盘先往里走。很多判断不会立刻说出来，而是先在心里慢慢成形，所以真正需要的，不是别人替着下决定，而是给一点时间把那股气理顺。比如表面上看只是安静，心里其实已经把轻重缓急排了好几轮。`,
+    "expression-first": `这张盘的重点在“想法不能闷太久”。很多事一旦看明白，就会想表达、想推进、想把话说透，所以最怕的不是没能力，而是把心里那股劲耗在反复犹豫里。比如明明脑子里已经有答案，却总卡在“要不要现在说”。`,
+    "practical-first": `这张盘更讲实际。很多选择最后都会回到值不值、稳不稳、能不能落地，所以不是不愿意试，而是不想把时间花在一眼就站不住的地方。比如比起热闹机会，更容易被“能不能落到生活里”这件事打动。`,
+    "balanced-core": `这张盘不是只靠一股劲往前冲，而是几层力量一起在推。读这类盘，重点不在一句吉凶，而在先看现在最需要把哪一层想明白。比如同一件事里，会同时想现实安排、关系分寸和自己值不值得。`,
   };
 
   const actionMap = {
@@ -209,11 +294,257 @@ function buildHealingGlossary(result) {
   };
 
   const glossary = [];
-  if (geju) glossary.push(`格局可以先当成这张盘的做事骨架。像这里的${geju}，说白了不是术语本身厉害，而是它会让人更偏向某一种处事方式。`);
-  if (dominant) glossary.push(`十神可以先当成“最常用的反应模式”。眼下更显眼的是${[dominant, second].filter(Boolean).join("、")}，所以很多选择会自然带着这一层习惯。`);
+  if (geju) glossary.push(`格局可以先当成这张盘的做事骨架。像这里的${geju}，说白了不是术语本身厉害，而是它会让人更偏向某一种处事方式。比如有人先看责任，有人先看表达，有人先看值不值得。`);
+  if (dominant) glossary.push(`十神可以先当成“最常用的反应模式”。眼下更显眼的是${[dominant, second].filter(Boolean).join("、")}，所以很多选择会自然带着这一层习惯。比如偏印重的人会先想透，食伤重的人会先表达，财星重的人会先看值不值。`);
   if (pattern) glossary.push(`${pattern}不等于好坏，只是在说这张盘此刻是更容易先往前顶，还是更需要外界托一把。`);
 
   return [baseMap[signature], actionMap[signature], ...glossary].filter(Boolean);
+}
+
+function detectDreamTheme(dreamText) {
+  const q = dreamText || "";
+  if (/考试|试卷|答题|写不完|迟到|老师|上课|作业/.test(q)) {
+    return {
+      key: "exam",
+      label: "考试与评价",
+      scene: "这场梦更像在演“怕交不出一份够好的答卷”",
+      cue: "常常和评价压力、责任感、怕自己做得不够有关",
+      ask: "这会儿最该先看的，不是赢没赢，而是心里那句“必须够好”是不是已经太重了",
+    };
+  }
+  if (/迷路|找不到路|回家|回不去|车站|方向|路口/.test(q)) {
+    return {
+      key: "lost",
+      label: "迷路与回家",
+      scene: "这场梦更像在演“人已经在走，但心里还没真正知道要往哪落”",
+      cue: "常常和方向感、归属感、现实里有事迟迟没定下来有关",
+      ask: "更值得先看的，是哪件事表面在拖，心里其实一直还没真正做决定",
+    };
+  }
+  if (/被追|追赶|逃跑|跑不动|躲|追杀/.test(q)) {
+    return {
+      key: "chase",
+      label: "追赶与逃离",
+      scene: "这场梦更像在演“有件事一直在身后追，心里却还没准备好正面看它”",
+      cue: "常常和压力感、未完成的决定、一直回避的问题有关",
+      ask: "先别急着问这是不是不吉，先看现实里是哪一层事一直在催，却还没真正被面对",
+    };
+  }
+  if (/掉牙|牙齿|流血|断牙/.test(q)) {
+    return {
+      key: "teeth",
+      label: "掉牙与失控",
+      scene: "这场梦更像在演“有些东西原本想握住，却开始松动”",
+      cue: "常常和失控感、关系边界、面子和自我支撑感有关",
+      ask: "更该先看的，是这会儿哪件事让心里最怕失去控制，而不是表面上看起来的小波动",
+    };
+  }
+  if (/水|海|河|洪水|淹|下雨|游泳/.test(q)) {
+    return {
+      key: "water",
+      label: "水与情绪",
+      scene: "这场梦更像在演“情绪已经漫上来，只是白天还没完全说出来”",
+      cue: "常常和情绪积压、关系起伏、环境变化太快有关",
+      ask: "先看情绪是被谁带起来的，再看这份感受到底在提醒什么",
+    };
+  }
+  if (/前任|旧爱|过去的人|老同学|以前喜欢的人/.test(q)) {
+    return {
+      key: "past-love",
+      label: "旧人重现",
+      scene: "这场梦更像在演“有一层旧情绪没有完全过去，只是白天不常拿出来看”",
+      cue: "常常和旧关系留下的标准、遗憾、比较心有关",
+      ask: "更值得先看的，不是旧人会不会回来，而是旧关系到底留下了哪一种还没松开的痕迹",
+    };
+  }
+  if (/已故|去世|过世|奶奶|爷爷|外婆|外公|亲人/.test(q)) {
+    return {
+      key: "ancestor",
+      label: "已故亲人与牵挂",
+      scene: "这场梦更像在演“心里有一层牵挂、愧疚或没说完的话，还在轻轻拉着”",
+      cue: "常常和思念、告别感、家里的责任和情感线有关",
+      ask: "先看最近是不是有一层家里或心里的人情牵挂被重新勾起来了",
+    };
+  }
+  return {
+    key: "general",
+    label: "梦里反复冒出的情绪",
+    scene: "这场梦更像在替心里一层还没说清的感觉找画面",
+    cue: "梦不一定在预言什么，更多是在放大白天还没彻底处理掉的那股气",
+    ask: "先抓住梦里最刺的一幕和最重的一种感受，真正有用的提醒通常就藏在那里",
+  };
+}
+
+function buildDreamAnswer(dreamText, formData, result) {
+  const theme = detectDreamTheme(dreamText);
+  const { dominant, second, signature } = getDominantProfile(result);
+  const dominantCombo = [dominant, second].filter(Boolean).join("、");
+  const currentDaYun = result.luck?.currentDaYun?.ganzhi || "这步运";
+  const annualLead = result.annualCards?.[0]
+    ? `${result.annualCards[0].year}年${result.annualCards[0].ganzhi}，先被推到前面的主题偏向“${result.annualCards[0].title}”`
+    : "眼下这层引动，还得放回日常节奏里一起看";
+
+  const firstLayerMap = {
+    "rule-aware": "这张盘不会先被表面的热闹带走，很多事都会先在心里掂一掂值不值、稳不稳。",
+    "steady-system": "这张盘更在意秩序、分寸和能不能长久站住，所以梦里的紧，常常不是一时情绪，而是现实位置没放稳。",
+    "sharp-tension": "这张盘心里那把尺很快，梦里出现反复卡住的画面，多半不是没路，而是要求太高、太怕走偏。",
+    "output-to-value": "这张盘怕的不是忙，而是忙了半天没有回音，所以梦里的着急，常常也在提醒“这股力气别白费”。",
+    "guarded-sense": "这张盘先起的是警觉，梦里越是反复追、反复找，越像在提醒心里有层顾虑一直没真正放下。",
+    "inner-first": "这张盘很多感受白天不一定立刻说，梦里反而更容易把那层轻重演出来。",
+    "expression-first": "这张盘想法一旦积住，梦里就容易出现赶、追、说不出来或总差一步的画面。",
+    "practical-first": "这张盘很看重现实落点，所以梦里的不安，常常不是虚的，而是生活里某件事迟迟没真正落地。",
+    "balanced-core": "这张盘的梦，往往不是单一情绪在说话，而是几层心事一起被带了出来。",
+  };
+
+  const focusLine = (() => {
+    if (/关系|感情|对象|回应|边界/.test(dreamText)) return "这场梦更容易和关系里的回应、边界、安心感连在一起。";
+    if (/工作|上班|领导|同事|项目/.test(dreamText)) return "这场梦更容易和现实里的工作评价、责任位置连在一起。";
+    if (/钱|花钱|欠钱|账单/.test(dreamText)) return "这场梦更容易和现实里的钱、支出、值不值连在一起。";
+    return "";
+  })();
+
+  const closeMap = {
+    "exam": "今天更值得做的，不是逼自己马上完美，而是把最卡的那一件事拆小一点，先交出一版。",
+    "lost": "今天更值得做的，不是急着把所有路都想清，而是先把眼前最该定的一件事定下来。",
+    "chase": "今天更值得做的，不是继续躲，而是把那件一直挂着的事写下来，先正面看一眼。",
+    "teeth": "今天更值得做的，不是硬撑住面子，而是先看哪件事已经让心里有失控感，再把边界补上。",
+    "water": "今天更值得做的，不是压情绪，而是给这股感受一个出口，比如写下来、说出来，或把节奏放慢半拍。",
+    "past-love": "今天更值得做的，不是猜旧人会不会回头，而是先看旧关系留下的那套标准，还要不要继续带着走。",
+    "ancestor": "今天更值得做的，是把那层牵挂认出来，不必急着压下去，先让心里这股情慢慢落地。",
+    "general": "今天更值得做的，是先抓住梦里最刺的一幕，再去看现实里哪件事正在碰那一层情绪。",
+  };
+
+  const openingMap = {
+    "exam": [
+      "梦里赶考，多半不是只在说试卷，更像心里那层“怕来不及、怕做不够”的气已经先起了。",
+      "梦见写不完、交不出，常常不是外面真有那么急，而是心里那句“不能出错”已经压得有点紧。",
+      "这类梦最像的，不是单单一场考试，而是醒来以后还能感觉到那股“我得撑住”的分量。",
+    ],
+    "lost": [
+      "梦里寻路，常常不是路真断了，而是心里那层去处还没真正定下来。",
+      "反复找路、回家、走不出去，这种梦最像是在提醒：人虽往前，心里却还有一处没落稳。",
+      "这类梦多半不是外面无路，而是里面那句“我到底该往哪里去”还没停下来。",
+    ],
+    "chase": [
+      "梦里被追，往往不是外面真有凶险，而是心里知道有件事已经不能再往后拖了。",
+      "一直跑、一直躲，这股紧多半不是梦里才有，而是白天那层压力已经追到心里来了。",
+      "这类梦最像的是：不是身后真有人追，而是里面那件没面对的事，一直没肯停下。",
+    ],
+    "teeth": [
+      "梦见掉牙，未必是在报事，更像心里那层支撑感、控制感有一点发松了。",
+      "梦里最刺的，不一定是牙本身，而是那种“稳不住、抓不牢”的感觉已经先冒出来了。",
+      "这类梦常常和失控感、体面、边界，或者一层不太肯说出口的心慌连在一起。",
+    ],
+    "water": [
+      "梦里见水，多半不是外面要变，而是心里那层情绪已经先漫上来了。",
+      "这类梦最像的是：感受已经动了，只是白天还没真正给它一个出口。",
+      "水入梦时，不必先问吉凶，更像心里那股没停下来的情绪在借景现身。",
+    ],
+    "past-love": [
+      "旧人入梦，多半不是旧事要重来，而是心里那层旧标准、旧感受还没真正放下。",
+      "梦见前任，往往不是在说对方本身，而是在提醒过去那段关系留下的痕迹还在影响现在。",
+      "这类梦最值得看的，不是旧人会不会回来，而是旧情到底还牵着哪一层心。",
+    ],
+    "ancestor": [
+      "梦见已故亲人，不必先往怪处想，更像心里那层牵挂、思念，或者没说完的话被轻轻碰了一下。",
+      "这种梦很多时候不是在吓人，而是在把家里的情、心里的挂念慢慢带回眼前。",
+      "这类梦最像的是：那份牵挂一直都在，只是平时不常拿出来看。",
+    ],
+    "general": [
+      "梦里有象，不必先惊，它更像在替心里那层说不清的感觉找画面。",
+      "很多梦不是在预言什么，而是把白天还没理顺的那股气，用更直白的方式演出来。",
+      "这类梦最有用的地方，不是猜象征，而是看它把哪一种感受放大到醒来还放不下。",
+    ],
+  };
+
+  const chartMap = {
+    "rule-aware": [
+      "放回这张盘里，这层梦意常常不是一时害怕，而是心里那把尺一直在衡量稳不稳、值不值。",
+      "这张盘本来就不肯随便把自己交出去，所以梦里反复出现的，多半也是那层分寸和戒备。",
+      "这张盘的梦，常常会把“到底站不站得住”这句心里话先演出来。",
+    ],
+    "steady-system": [
+      "放回这张盘里，这层梦更像在碰现实秩序、责任位置，或者一件迟迟没完全落稳的安排。",
+      "这张盘最在意的是稳和次序，所以梦里一乱，常常不是小事，而是现实里有一层安排还没真正站牢。",
+      "这张盘的梦，不太像空来的惊吓，更像在提醒哪一层生活秩序开始松了。",
+    ],
+    "sharp-tension": [
+      "放回这张盘里，这个梦更像在碰那股标准太高、心里先紧起来的地方。",
+      "这张盘本来就很会先看出不对，所以梦里更容易把“哪里不值、哪里不稳”一下子演得很重。",
+      "这张盘的梦，常常不是没答案，而是心里太清楚哪里不能将就。",
+    ],
+    "output-to-value": [
+      "放回这张盘里，这个梦更像在碰“力气到底有没有落到结果上”这件事。",
+      "这张盘最怕的是忙了半天没有回音，所以梦里也很容易把“白费”那层焦躁演出来。",
+      "这张盘的梦，常常会替心里问一句：这股劲到底有没有用对地方。",
+    ],
+    "guarded-sense": [
+      "放回这张盘里，这个梦更像在碰那层还没放下来的戒备和警觉。",
+      "这张盘本来就先起的是防线，所以梦里越紧，越像在提醒心里某层顾虑还没真正松开。",
+      "这张盘的梦，很多时候是在告诉人：外面未必真有事，心里那层提防却一直没有退下去。",
+    ],
+    "inner-first": [
+      "放回这张盘里，这个梦更像在替心里那层没说出口的轻重开口。",
+      "这张盘很多感受白天不急着讲，梦里反而会把那层真正介意的地方先亮出来。",
+      "这张盘的梦，常常不是在新增什么，而是在替心里已经有的感受翻译成画面。",
+    ],
+    "expression-first": [
+      "放回这张盘里，这个梦更像在碰想法太满、话还没找到出口的那一层。",
+      "这张盘本来就容易先看到问题，所以梦里也会把那股“想说、想改、想推进”的劲放大。",
+      "这张盘的梦，多半和表达、判断、想法卡住之后的闷感有关。",
+    ],
+    "practical-first": [
+      "放回这张盘里，这个梦更像在碰现实里那件迟迟没落地、所以心里一直没真正松下来的事。",
+      "这张盘很看重现实着落，所以梦里只要一乱，常常都和生活里的值不值、稳不稳有关。",
+      "这张盘的梦，不太会离开现实太远，很多画面最后都能落回一件实际的安排上。",
+    ],
+    "balanced-core": [
+      "放回这张盘里，这个梦更像在提醒眼下不只是一层情绪在动，而是几股心事一起被碰到了。",
+      "这张盘的梦，往往不是单一吉凶，而是把状态、关系和现实三层一起轻轻推到眼前。",
+      "这张盘里被梦碰到的，多半不是一个点，而是一层正在慢慢成形的心事。",
+    ],
+  };
+
+  const openingVariants = openingMap[theme.key] || openingMap.general;
+  const chartVariants = chartMap[signature] || chartMap.balanced-core;
+  const opening = openingVariants[variantIndex(`dream-opening-${theme.key}`)];
+  const chartLine = chartVariants[variantIndex(`dream-chart-${theme.key}-${signature}`)];
+
+  const poeticLead = (() => {
+    const lines = {
+      exam: ["梦里赶考，常常赶的不是时辰，而是心里那口不肯松的气。", "纸短梦长，这类梦最怕的不是答不出，而是心里先认定自己不能失手。"] ,
+      lost: ["梦里寻路，最深的不是路远，而是心还没有安到该安的地方。", "有些梦一直在找出口，说到底，是心里还有一层去处没定。"] ,
+      chase: ["梦里逃得越急，越像心里有一层事已经逼近，却还没肯停下来照一照。", "被追的梦，多半不是外面有急雨，而是里面那句“不能再拖了”终于追上来了。"] ,
+      teeth: ["梦见牙落，不必先惊，多半是心里那层支撑感先松了一下。", "这类梦最怕的，不是失去什么，而是那股“稳不住”的感觉先露了头。"] ,
+      water: ["梦里见水，常常不是山雨欲来，而是心里的波已经先起了。", "有些情绪白天不说，夜里便借水成形。"] ,
+      "past-love": ["旧人入梦，不一定是旧缘要返，更像旧情留下的影子还未完全退净。", "梦见旧人，往往不是人在回来，而是心里那层旧感受还没走远。"] ,
+      ancestor: ["故人入梦，多半不是来惊人，更像心里那份牵挂在夜里轻轻回身。", "梦里见到已故亲人，常常不是异事，而是心里的思念终于有了画面。"] ,
+      general: ["浮生多梦，梦里最先亮出来的，往往正是白天最不肯直看的那一层。", "梦不必先当成征兆，更像一面水，照出心里最先动的地方。"] ,
+    };
+    const variants = lines[theme.key] || lines.general;
+    return variants[variantIndex(`dream-poetic-${theme.key}`)];
+  })();
+
+  return [
+    `${poeticLead} ${opening} ${theme.scene}。`,
+    `${chartLine} ${firstLayerMap[signature] || firstLayerMap["balanced-core"]} 眼下命盘里更显眼的是${dominantCombo || "这组主神"}。${focusLine} ${currentDaYun}这一步也在起作用，${annualLead}。`,
+    `${theme.ask}。${closeMap[theme.key] || closeMap.general}`,
+  ];
+}
+
+function renderDreamThread() {
+  if (!dreamThread) return;
+
+  dreamThread.innerHTML = dreamHistory
+    .map(
+      (item) => `
+        <article class="followup-turn">
+          <p class="turn-question">梦：${item.question}</p>
+          <div class="turn-answer">${item.answer.map((line) => `<p>${line}</p>`).join("")}</div>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function renderPillars(pillars) {
@@ -302,16 +633,16 @@ function renderElements(elements) {
 function renderTenGods(tenGods) {
   const container = document.getElementById("ten-gods-grid");
   const plainMap = {
-    比肩: "更像自己的那股劲，遇事会先按自己的判断来。",
-    劫财: "像不服输的那一面，容易自己上手，也容易不想吃亏。",
-    食神: "像把事慢慢做顺的能力，适合稳定输出和长期积累。",
-    伤官: "像脑子快、表达快、标准也高，不容易被轻易说服。",
-    正财: "更像踏实经营出来的钱，讲究稳、值不值、能不能落地。",
-    偏财: "更像机会和资源，要看眼力，也看节奏感。",
-    正官: "更像规则、责任、位置，很多事会先看能不能站住。",
-    七杀: "更像压力和推动力，逼着人尽快长出判断。",
-    正印: "更像被托住、被理解、被系统接住的力量。",
-    偏印: "更像先想透、先防风险、先看值不值得。"
+    比肩: "更像自己的那股劲，遇事会先按自己的判断来。比如别人催得很急，心里还是会先按自己的节奏过一遍。",
+    劫财: "像不服输的那一面，容易自己上手，也容易不想吃亏。比如合作里会更在意边界清不清、分配公不公平。",
+    食神: "像把事慢慢做顺的能力，适合稳定输出和长期积累。比如做久一点、磨细一点，反而更容易出成绩。",
+    伤官: "像脑子快、表达快、标准也高，不容易被轻易说服。比如听到一句不合理的话，心里会立刻冒出反问。",
+    正财: "更像踏实经营出来的钱，讲究稳、值不值、能不能落地。比如比起一时热闹，更在意东西能不能长期留住。",
+    偏财: "更像机会和资源，要看眼力，也看节奏感。比如同样一件事，有时就是会更早闻到机会的味道。",
+    正官: "更像规则、责任、位置，很多事会先看能不能站住。比如做决定时会自然先想后果和分寸。",
+    七杀: "更像压力和推动力，逼着人尽快长出判断。比如事情一来，反而会先把自己逼到一个更能扛的位置。",
+    正印: "更像被托住、被理解、被系统接住的力量。比如遇到合适的人或环境，状态会明显稳下来。",
+    偏印: "更像先想透、先防风险、先看值不值得。比如还没答应之前，心里已经把最坏情况演练一遍。"
   };
   container.innerHTML = tenGods.dominant
     .map(
@@ -1205,6 +1536,118 @@ function buildFollowupAnswerV2(question, formData, result) {
     return variants[index % variants.length];
   }
 
+  function relationMiddle(kind) {
+    const index = variantIndex(`relation-middle-${kind}-${signature}`);
+    const map = {
+      fear: [
+        "真正绷住的，常常不是一句话没回，而是心里一直拿不准这段关系最后能不能落到安稳里。",
+        "这层顾虑一旦没被安稳接住，外面再热闹，心里也还是会留一半站在原地。",
+        "所以最难的从来不是开始，而是靠近以后，那层“能不能放心”迟迟没有落下来。",
+      ],
+      need: [
+        "放到关系里看，最先缺的不是热闹，而是那种能让人慢慢把戒备放下来的稳定回应。",
+        "真要走长一点，先补上的往往不是浪漫，而是情绪稳、说话算、关系能落进日常这层东西。",
+        "很多关系不是败在不喜欢，而是一直没人把那份确定感真正给出来。",
+      ],
+      boundary: [
+        "边界这层一旦模糊，心里那把尺就会一直悬着，关系看着在走，心却不敢真的往前站。",
+        "关系能不能松下来，很多时候不看嘴上怎么说，而看该回应时有没有回应，该站出来时站不站出来。",
+        "这张盘在关系里怕的不是冲突，而是那条线一直没人说明白，最后什么都只能靠自己猜。",
+      ],
+      default: [
+        "感情放回这张盘里，真正关键的不是热不热，而是靠近以后会不会越来越安定。",
+        "这类关系问题，最后多半都会落回同一层：回应给不给力，边界清不清，心能不能慢慢放下。",
+        "所以别急着只看喜欢不喜欢，先看这段关系到底会把状态带向更稳，还是更紧。",
+      ],
+    };
+    const variants = map[kind] || map.default;
+    return variants[index % variants.length];
+  }
+
+  function careerMiddle(kind) {
+    const index = variantIndex(`career-middle-${kind}-${signature}`);
+    const map = {
+      position: [
+        "位置合不合，不是看名头响不响，而是看这股判断力、执行力和分寸感能不能真的用起来。",
+        "这张盘放到工作里，最怕不是辛苦，而是本事明明有，却一直放在接不住自己的地方。",
+        "真正接得住这张盘的位置，通常不会只是忙，而是越做越顺、越做越能把价值拉出来。",
+      ],
+      change: [
+        "要不要动，不是只看机会来了没有，而是看这次变化会不会把路越走越清。",
+        "这类问题最怕被外面的动静带着走，真正该看的是：这一步是在开路，还是在加耗。",
+        "很多变动不是不能动，而是先要分清，这一下动完之后，状态是更顺还是更散。",
+      ],
+      strength: [
+        "真正值钱的，往往不是表面那层能扛，而是哪一层判断、节奏感和处理事的方式一直都在。",
+        "这张盘最容易被低估的，不是能力本身，而是那种一旦放对地方就会很见分量的做事路数。",
+        "所以最怕的不是没本事，而是一直把最能换位置的那部分，耗在不值得的小地方。",
+      ],
+      default: [
+        "工作这件事放到这张盘里，最先要分清的，不是哪条路更亮，而是哪条路更接得住自己。",
+        "事业上真正要紧的，常常不是快不快，而是力气落下去之后，会不会越做越顺。",
+        "这张盘不怕起步慢，怕的是方向没对，结果把最能抬位置的那层力气先磨掉了。",
+      ],
+    };
+    const variants = map[kind] || map.default;
+    return variants[index % variants.length];
+  }
+
+  function financeMiddle(kind) {
+    const index = variantIndex(`finance-middle-${kind}-${signature}`);
+    const map = {
+      source: [
+        "财路放到这张盘里，更像顺着位置、能力和长期积累慢慢长出来，不太像一下子撞到一笔。",
+        "钱从哪儿来，关键不是运气大不大，而是这股力气放在哪种路子上最能稳稳兑现。",
+        "真正能把钱接住的，多半不是冲得多快，而是那层本事终于被看见、被换成结果。",
+      ],
+      leak: [
+        "漏财很多时候不是钱自己跑掉，而是某一类消耗一直没被当回事。",
+        "真正该守的，往往不是一笔具体数字，而是别把时间、精力和钱都花在明知道站不住的地方。",
+        "这层问题最怕的不是花钱，而是反复把资源耗在没有回响的地方，最后整个人也跟着被拖空。",
+      ],
+      rhythm: [
+        "财这件事放到这张盘里，更像讲节奏，不只是讲快慢。",
+        "先分清是适合慢慢累出稳定感，还是在某个阶段顺势发一把力，比一开始就问赚多少更重要。",
+        "这张盘问财，最怕看得太急，因为很多回报本来就不是一口气跳出来的。",
+      ],
+      default: [
+        "看财这件事，最先要分清的，不是来得快不快，而是这张盘更适合怎么去接。",
+        "这张盘问钱，不怕起步慢，怕的是一开始就把力气放在不对的路子上。",
+        "所以别急着先问结果大不大，先看这股力气到底放在哪种财路上更能稳住。",
+      ],
+    };
+    const variants = map[kind] || map.default;
+    return variants[index % variants.length];
+  }
+
+  function timeMiddle(kind) {
+    const index = variantIndex(`time-middle-${kind}-${signature}`);
+    const map = {
+      common: [
+        "先看共性，不是退一步，而是在先把不会跑掉的骨架抓稳。",
+        "这时候最值得抓住的，不是立刻猜准，而是先把那些不会因为晚一两个时辰就变掉的部分看明白。",
+        "先把底色看稳，后面再分细节，会比一上来急着猜准更有用。",
+      ],
+      diff: [
+        "真正会被时柱拉开的，往往不是整张盘翻掉，而是几处细节开始分出不同走法。",
+        "时柱一换，最容易动的不是整张底色，而是后面那几处会把人带去不同感受的位置。",
+        "这层差异更像是细枝末节在分叉，不是前面整套判断都要推倒重来。",
+      ],
+      calibration: [
+        "校时最稳的办法，不是一下拍板，而是先把不变的地方看牢，再拿会分叉的地方去对照经历。",
+        "这种问题越问细，时柱越容易缩准，因为真正能分开的，往往是具体年份里的关系、工作和搬动落点。",
+        "先认清骨架，再去对照那些明显的分叉经历，时辰才会越校越准。",
+      ],
+      default: [
+        "时辰这层先别急着定死，先看什么不会跑掉，再看什么会被慢慢拉开。",
+        "问到时柱，最稳的看法通常不是先猜，而是先把不会变的底色捞出来。",
+        "这类问题先抓骨架，比一开始就执着精确到几分几秒更有用。",
+      ],
+    };
+    const variants = map[kind] || map.default;
+    return variants[index % variants.length];
+  }
+
   function finishTone(kind) {
     if (kind === "relationship") {
       if (signature === "guarded-sense" || signature === "rule-aware") return "关系里最值得先看清的，不是热闹不热闹，而是回应稳不稳、边界清不清。";
@@ -1230,69 +1673,372 @@ function buildFollowupAnswerV2(question, formData, result) {
     return "真正要紧的，不是急着把答案定死，而是先把这张盘最先冒出来的那股气认出来。";
   }
 
+  function joinReply(parts) {
+    return parts.filter(Boolean).join(" ");
+  }
+
+  function buildRelationshipReply(kind) {
+    const map = {
+      fear: [
+        relationshipOpening("fear"),
+        relationRead("fear"),
+        signature === "guarded-sense"
+          ? "这张盘怕的不是没人靠近，而是靠近以后，心里那层提防一直放不下来。"
+          : "这张盘在关系里真正卡住的，不是外面有没有动静，而是心里始终在问：这段回应到底稳不稳。",
+        driveTone(),
+        `${currentDaYunText}这一步，更像在把关系里的分寸、边界和回应慢慢推到前面。`,
+        "所以最该先看清的，不是热度高不高，而是这段关系有没有让心里慢慢安下来。",
+      ],
+      need: [
+        relationshipOpening("need"),
+        relationMiddle("need"),
+        signature === "rule-aware"
+          ? "这张盘真正要的，不是几句好听话，而是对方说出口的事能不能落到日常里。"
+          : "如果关系真要走长，最先补上的往往不是浪漫，而是情绪稳、回应稳、节奏也稳。",
+        themeTone(),
+        `${annualLead}，所以眼前最值得看清的，是谁给得出那份让心慢慢放下来的确定感。`,
+      ],
+      boundary: [
+        relationshipOpening("boundary"),
+        relationMiddle("boundary"),
+        "很多关系表面还在往前走，真正把人绷住的，却是边界一直没说清、回应一直不够准。",
+        baseTone(),
+        signature === "expression-first"
+          ? "这类盘尤其怕心里很满、嘴上却说快了，所以边界不是强硬，而是把真正介意的那句话说准。"
+          : "这类盘更怕一切都靠自己猜，所以边界清楚，本身就是一种安稳。",
+        "放回这张盘里看，真正有用的从来不是承诺本身，而是承诺后面有没有站得住的动作。",
+      ],
+      default: [
+        relationshipOpening("default"),
+        relationRead("default"),
+        "关系这件事放到这张盘上，不必急着问最后成不成，先看靠近之后状态是松下来，还是越来越紧。",
+        driveTone(),
+        themeTone(),
+        "如果这一层先看清，后面很多关于关系的细问才会真正落到点上。",
+      ],
+    };
+
+    return joinReply(map[kind] || map.default);
+  }
+
+  function buildCareerReply(kind) {
+    const map = {
+      position: [
+        careerOpening("position"),
+        careerRead("position"),
+        signature === "steady-system"
+          ? "这张盘真正接得住的，多半是有标准、有次序、也能慢慢把位置做稳的那类环境。"
+          : "这张盘最怕的不是忙，而是忙了半天，判断和执行都用不上，最后只剩消耗。",
+        themeTone(),
+        `${currentDaYunText}这一步，更像在把“什么位置真正接得住自己”这件事推到眼前。`,
+      ],
+      change: [
+        careerOpening("change"),
+        careerMiddle("change"),
+        "问到换不换，先别只看外面的机会大不大，更该看这一步变化会不会把路越走越清。",
+        signature === "sharp-tension"
+          ? "这类盘最怕把自己逼进太紧的局，所以变化不是不能要，而是不能为了逃离当下就急着动。"
+          : "这类盘更适合顺着节奏动，而不是被外面的动静一下子带跑。",
+        `${annualLead}，所以眼前更值得分清的，是这次变化会把位置抬高，还是只会把状态先磨空。`,
+      ],
+      strength: [
+        careerOpening("strength"),
+        careerMiddle("strength"),
+        "很多最值钱的部分，并不一定最先被看见，常常是在复杂的事里越做越显分量。",
+        baseTone(),
+        signature === "expression-first"
+          ? "所以真正不能白白放掉的，是判断、表达和把事做成的那股劲。"
+          : "所以真正不能低估的，是那层分寸、扛事和把局面接稳的能力。",
+      ],
+      default: [
+        careerOpening("default"),
+        careerRead("default"),
+        "工作这件事放到这张盘里，不是先看哪条路更亮，而是先看哪条路会让力气越用越顺。",
+        driveTone(),
+        `${currentDaYunText}这一步，本来就在慢慢把事业重心往前推，所以眼下更该看清的是方向，而不只是机会。`,
+      ],
+    };
+
+    return joinReply(map[kind] || map.default);
+  }
+
+  function buildFinanceReply(kind) {
+    const map = {
+      source: [
+        financeOpening("source"),
+        financeRead("source"),
+        signature === "output-to-value"
+          ? "这张盘的钱更像从表达、结果和可见的价值里长出来，不太像一把抓到横财。"
+          : "这张盘的财路，多半还是顺着位置、判断和长期积累慢慢长，不是一下子撞出来的。",
+        themeTone(),
+        "所以比起急着求快，更值得先看清的是：哪一层本事最容易被换成实打实的回报。",
+      ],
+      leak: [
+        financeOpening("leak"),
+        financeMiddle("leak"),
+        "漏掉的往往不只是钱本身，也可能是时间、精力和本该留给自己的资源。",
+        signature === "practical-first"
+          ? "这类盘尤其怕每一步都算得太紧，最后钱没少守，状态却先被掏空。"
+          : "这类盘更要防的，是反复把资源耗在明知道站不住的地方。",
+        "所以真正要守的，不是一笔数字，而是别让消耗变成日常习惯。",
+      ],
+      rhythm: [
+        financeOpening("rhythm"),
+        financeMiddle("rhythm"),
+        "这张盘看财，更像看节奏是不是踩对，而不是只看来得快不快。",
+        `${currentDaYunText}这一步，也在提醒这件事：钱要么顺着节奏一点点累，要么在某个阶段顺势发一把力。`,
+        "所以眼下更值得分清的，是该稳稳接住，还是该在对的时间往前推一把。",
+      ],
+      default: [
+        financeOpening("default"),
+        financeRead("default"),
+        "问到财，不必先急着听一句有还是没有，更该先看清这股财气是从哪里来，又会从哪里漏。",
+        driveTone(),
+        "这层看明白之后，后面再问收入、开销、机会，答案就不会总绕回同一个结。",
+      ],
+    };
+
+    return joinReply(map[kind] || map.default);
+  }
+
+  function buildTimeReply(kind, prompt) {
+    const map = {
+      common: [
+        timeOpening("common"),
+        timeRead("common"),
+        "时辰还没完全定下来时，最有参考价值的，往往就是那些不管落在哪个时段都不会跑掉的底色。",
+        baseTone(),
+        prompt,
+      ],
+      diff: [
+        timeOpening("diff"),
+        timeMiddle("diff"),
+        "真正会被时柱拉开的，多半不是整张盘翻掉，而是关系表达、晚运感受、事情落点这些细处慢慢分叉。",
+        prompt,
+        "所以时柱要看的，不是推翻前面，而是看后面哪些细节开始走出不同味道。",
+      ],
+      calibration: [
+        timeOpening("calibration"),
+        timeMiddle("calibration"),
+        "校时最稳的办法，还是先看骨架，再拿会分叉的经历去一层层对。",
+        prompt,
+        "越是把问题问细，比如哪几年关系、工作、搬动最明显，时柱就越容易慢慢缩准。",
+      ],
+      default: [
+        timeOpening("default"),
+        timeRead("default"),
+        "问到时辰，不必先急着猜准，先把不会变的部分看稳，后面那些会分开的细处自然会慢慢显出来。",
+        prompt,
+      ],
+    };
+
+    return joinReply(map[kind] || map.default);
+  }
+
+  function buildExpressionReply() {
+    const qLower = q.toLowerCase();
+    const asksAboutSpeech = /说|开口|讲出来|表达/.test(qLower);
+    const asksAboutOutput = /输出|作品|写|写出来|内容/.test(qLower);
+    const asksAboutLanding = /落到什么地方|不算白费|放到哪里/.test(qLower);
+    const openers = [
+      "这类问题，重点不在会不会想，而在想明白之后，力气到底落到哪里才不白白绕回心里。",
+      "问到表达，先别急着看说得快不快，更该看这张盘的判断最适合在哪种场合被听见。",
+      "这层问的其实不是嘴上能不能说，而是心里那股判断该往哪放，才会真正变成结果。",
+    ];
+    const leads = [
+      asksAboutSpeech
+        ? "很多时候不是没话，而是话到嘴边前，心里已经先把分寸和后果都过了一遍。"
+        : asksAboutOutput
+          ? "这张盘一旦有了想法，最怕的不是做不到，而是一直停在心里，最后没真正长成东西。"
+          : asksAboutLanding
+            ? "真正怕白费的，不是想法不够好，而是一直没找到最能接住它的出口。"
+            : "这张盘的表达，不是越快越好，而是要放到能接得住判断和分寸的地方。",
+      signature === "expression-first"
+        ? "命盘里更显眼的是把东西说清、做成、推出去的那股气，所以最值钱的地方往往不是藏着，而是把判断落成结果。"
+        : signature === "inner-first" || signature === "guarded-sense"
+          ? "这张盘先强的是往里看、先想透，所以表达真正顺起来，多半是在心里那杆秤先稳住之后。"
+          : "放回这张盘里看，表达不是单独的一张嘴，而是判断、节奏和场合一起配合，才会显得准。",
+      asksAboutOutput
+        ? "如果是写、做内容、做作品这一类，更适合把想法落到看得见的成果上，不要让脑子一直领先，手却迟迟没跟上。"
+        : asksAboutSpeech
+          ? "如果是说话和开口这一类，更要紧的不是一次说很多，而是把最关键的那一句说到点上。"
+          : "所以更值得先看的，不是表达多不多，而是哪一种表达最能替这张盘把路打开。",
+      `${currentDaYunText}这一步，也在把“想法该不该落地、该落到哪”这件事慢慢推到前面。`,
+      finishTone("expression"),
+    ];
+    return joinReply([openers[variantIndex(`expression-open-${signature}`) % openers.length], ...leads]);
+  }
+
+  function buildBurnoutReply() {
+    const asksAboutAnxiety = /焦虑|发紧|绷着|慌/.test(q);
+    const asksAboutTired = /累|消耗|扛不住|撑/.test(q);
+    const openers = [
+      "问到内耗，不是先看事情多不多，而是先看心里哪股力一直没地方放。",
+      "这类问题最怕一上来只怪外面，其实很多累，都是心里那根弦先绷起来了。",
+      "真正磨人的，常常不是事情本身，而是这张盘哪一层标准一直没放下。",
+    ];
+    const body = [
+      asksAboutAnxiety
+        ? "发紧这件事落到这张盘里，多半不是外面马上要出大事，而是心里先把轻重、得失、后果全都转了一遍。"
+        : asksAboutTired
+          ? "觉得累的时候，真正累人的通常不是做了多少，而是边做边要撑着那口不能出错的气。"
+          : "内耗放回这张盘里看，常常不是没力气，而是力气一直在心里互相打架。",
+      dominantElement === "土"
+        ? "这张盘土重，很多时候会先把责任和后果扛进心里，所以事情还没真正压下来，人已经先累了一轮。"
+        : dominantElement === "水"
+          ? "这张盘水气重时，最容易出现的不是外面马上乱，而是心里一直在转，怎么也停不下来。"
+          : dominantTenGod.includes("印")
+            ? "印星更显时，最磨人的往往不是做不到，而是那杆秤一直在量稳不稳、值不值、会不会出错。"
+            : "这张盘更容易先顶上去，所以很多消耗不是因为真没办法，而是太早把自己放到了必须扛的位置上。",
+      `${annualLead}，所以眼前这层紧，不像是突然冒出来的，更像是原本在心里压着的那部分已经被推到面前了。`,
+      "先别急着问自己还能不能再撑一点，更值得先看的是：眼下哪一件事最该先松手，哪一种环境最能把这口气放下来。",
+      finishTone("burnout"),
+    ];
+    return joinReply([openers[variantIndex(`burnout-open-${signature}`) % openers.length], ...body]);
+  }
+
+  function buildSecurityReply() {
+    const asksAboutNeed = /需要|要什么|最要紧/.test(q);
+    const asksAboutResponse = /回应|回不回|回消息|回复/.test(q);
+    const asksAboutBoundary = /边界|靠不靠谱|稳不稳|清不清/.test(q);
+    const openers = [
+      "安全感这类问题，先别急着往外找答案，先看这张盘到底靠什么才会慢慢松下来。",
+      "问到安全感，真正该看的不是别人做得够不够，而是这张盘心里最先认的那层东西是什么。",
+      "这层问题最怕只看表面热情，命盘里真正要紧的，多半是更深一层的回应和分寸。",
+    ];
+    const body = [
+      asksAboutNeed
+        ? `这张盘真正需要的，不是场面上的热，而是${relationshipNeed}。`
+        : asksAboutResponse
+          ? "回应落不到位时，这张盘最先感到的不是失望，而是心里那层戒备会立刻重新立起来。"
+          : asksAboutBoundary
+            ? "边界一旦含糊，这张盘心里那把尺就会一直悬着，所以很多不安并不是多想，而是真的没被接稳。"
+            : `放回关系里看，这张盘最需要的，还是${relationshipNeed}。`,
+      dominantTenGod.includes("印")
+        ? "印星更显的人，不太会因为一时热情就全心交出去，真正能让心慢慢放下来的，往往是长期稳定、说到做到。"
+        : dominantTenGod.includes("官") || dominantTenGod.includes("杀")
+          ? "官杀更显时，安全感常常不是一句承诺，而是责任感和现实匹配能不能落到日常里。"
+          : "这张盘更怕关系一直漂着，所以真正安住人的，常常不是甜，而是回应稳、边界清、日常里有着落。",
+      `${currentDaYunText}这一步，也会把关系里的需求感和确认感推到前面，所以很多感受会比平时更直接。`,
+      asksAboutResponse
+        ? "真要继续细看，可以直接问：哪一种回应最能让这张盘把那层戒备放下来。"
+        : "所以别急着只问谁更爱谁，先看谁真的给得出这份让心松下来的稳定感。",
+      finishTone("security"),
+    ];
+    return joinReply([openers[variantIndex(`security-open-${signature}`) % openers.length], ...body]);
+  }
+
+  function buildChangeReply() {
+    const asksAboutYears = /两年|三年|明年|后年|接下来/.test(q);
+    const asksAboutDirection = /往哪|哪一层|哪方面|变到哪里/.test(q);
+    const openers = [
+      "问到变化，最怕一下子揉成一句会不会变，更值得先看这一步先推哪一层。",
+      "变化这类问题，不是先听一句吉凶，而是先看命盘里哪股气已经开始转了。",
+      "真正要紧的不是变不变，而是这一步变化会先落在关系、工作，还是心里的状态上。",
+    ];
+    const body = [
+      asksAboutYears
+        ? "把时间收窄到接下来这两三年，会更容易看清变化不是突然跳出来的，而是一层层往前逼近。"
+        : asksAboutDirection
+          ? "问方向的时候，先别急着看结果，先看这股变化最先牵动的是哪一层现实安排。"
+          : "这类变化最怕看得太粗，真正能看清的，往往是先变哪一层、后变哪一层。",
+      result.analysis?.changeArea || "这张盘眼下的变化重心，还是要放回当前运势和现实处境里一起看。",
+      `${currentDaYunText}这一步本来就在发力，${annualLead}。`,
+      "所以这会儿更值得做的，不是急着把答案定死，而是先认出哪一层已经开始松动，哪一层还不能硬推。",
+      finishTone("change"),
+    ];
+    return joinReply([openers[variantIndex(`change-open-${signature}`) % openers.length], ...body]);
+  }
+
+  function buildThemeReply() {
+    const asksAboutPriority = /先看清|先看什么|最该看/.test(q);
+    const asksAboutCore = /主轴|主题|底色|重点/.test(q);
+    const openers = [
+      "这种问题，重点不在外面哪件事最吵，而在命盘里哪股气已经先冒到前面来了。",
+      "问主轴的时候，先别急着抓一件具体的事，先看这张盘眼下真正亮出来的是哪一层力量。",
+      "这类问题最值得做的，不是立刻找结论，而是先认出现在到底是哪一层在领头。",
+    ];
+    const body = [
+      asksAboutPriority
+        ? "眼下最该先看清的，多半不是表面最急的那件事，而是背后到底是哪一层安排在决定后面的节奏。"
+        : asksAboutCore
+          ? "主轴这层，常常不是单一一件事，而是一种做事方式、人生重心和最近一直被推着面对的题目。"
+          : "这类主题往往不只落在一件事上，而是会同时牵动几个现实面向。",
+      `先看日主，这张盘目前是${pattern}；再看十神，${dominantCombo || "这一组主神"}更显眼，所以现在真正被推到前面的，不只是事情本身，而是一层做事方式和人生重心。`,
+      `${currentDaYunText}这一步，本来就在慢慢把一层主题推到台前。${annualLead}。`,
+      dominantTenGod.includes("印")
+        ? "顺着这张盘看，眼下先要看清的，多半是哪些选择会让心里的秤放松，哪些只会越压越紧。"
+        : dominantTenGod.includes("食") || dominantTenGod.includes("伤")
+          ? "顺着这张盘看，眼下先要看清的，是判断和表达该往哪落，才不会一直空转。"
+          : "顺着这张盘看，眼下先要看清的，是哪层现实安排正在决定后面的步子。",
+      finishTone("theme"),
+    ];
+    return joinReply([openers[variantIndex(`theme-open-${signature}`) % openers.length], ...body]);
+  }
+
   if (hits.relationship) {
     if (relationFearHit) {
-      return `${relationshipOpening("fear")} ${relationRead("fear")} ${baseTone()} ${driveTone()} ${timingTone()} 所以关系里最容易卡住的，不是表面的来往多少，而是回应稳不稳、边界清不清、说过的话能不能落下来。`;
+      return buildRelationshipReply("fear");
     }
     if (relationNeedHit) {
-      return `${relationshipOpening("need")} ${relationRead("need")} ${baseTone()} ${driveTone()} ${timingTone()} 真正有用的，多半是稳定回应、说话算数、情绪别忽冷忽热，也愿意把关系落进日常。`;
+      return buildRelationshipReply("need");
     }
     if (relationBoundaryHit) {
-      return `${relationshipOpening("boundary")} ${relationRead("boundary")} ${baseTone()} ${driveTone()} ${timingTone()} 所以真正让心里松开的，不是嘴上承诺，而是该回应的时候有回应，该站出来的时候站得出来。`;
+      return buildRelationshipReply("boundary");
     }
-    return `${relationshipOpening("default")} ${relationRead("default")} ${baseTone()} ${driveTone()} ${timingTone()} ${finishTone("relationship")}`;
+    return buildRelationshipReply("default");
   }
   if (hits.career) {
     if (careerPositionHit) {
-      return `${careerOpening("position")} ${careerRead("position")} ${baseTone()} ${themeTone()} ${timingTone()} 所以更值得先找的，不是最热的位置，而是既能用上判断、又不会把状态磨空的那类环境。`;
+      return buildCareerReply("position");
     }
     if (careerChangeHit) {
-      return `${careerOpening("change")} 问到要不要换、该不该动，关键从来不是外面动静大不大，而是这一步运到底在催守，还是催变。${baseTone()} ${driveTone()} ${themeTone()} ${timingTone()} 真正要看的，是眼前这一下变化会不会把路越走越清，还是只是把人先推得更累。`;
+      return buildCareerReply("change");
     }
     if (careerStrengthHit) {
-      return `${careerOpening("strength")} 这张盘在工作里最值钱的，往往不是表面能扛，而是哪一层判断、分寸和做事方式其实一直都在。${baseTone()} ${driveTone()} ${themeTone()} ${timingTone()} 所以最怕的不是没能力，而是一直把最能换位置的那部分，耗在不值得的小地方。`;
+      return buildCareerReply("strength");
     }
-    return `${careerOpening("default")} ${careerRead("default")} ${baseTone()} 放到事业上，这张盘不适合只看表面机会，更该看什么位置能把这股气用对。${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("career")}`;
+    return buildCareerReply("default");
   }
   if (hits.finance) {
     if (financeSourceHit) {
-      return `${financeOpening("source")} 问到财路，先别急着想有没有横出来的一笔，更该先看这张盘的钱是从什么地方慢慢长出来。${baseTone()} ${driveTone()} ${themeTone()} ${timingTone()} 所以比起撞运气，这张盘更适合把力气放在能兑现能力、位置或结果的地方。`;
+      return buildFinanceReply("source");
     }
     if (financeLeakHit) {
-      return `${financeOpening("leak")} 问到漏财，常常不是钱自己跑掉，而是某一类消耗一直没被看清。${baseTone()} ${driveTone()} ${themeTone()} ${timingTone()} 真正该守的，往往不是一笔具体数字，而是别把时间、精力和钱都花在明知道站不住的地方。`;
+      return buildFinanceReply("leak");
     }
     if (financeRhythmHit) {
-      return `${financeOpening("rhythm")} 这张盘看财，更像看节奏，而不是只看快慢。${baseTone()} ${driveTone()} ${themeTone()} ${timingTone()} 所以更值得先分清的，是适合慢慢累出稳定感，还是在某个阶段顺势发一把力。`;
+      return buildFinanceReply("rhythm");
     }
-    return `${financeOpening("default")} ${financeRead("default")} ${baseTone()} 放到财这件事上，先看的不是快不快，而是钱更像从哪里长出来。${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("finance")}`;
+    return buildFinanceReply("default");
   }
   if (hits.time) {
     const prompt = result.timeInsight?.prompt || "如果出生时间还不够准，就先看年、月、日三柱里不会变的那部分。";
     if (timeCommonHit) {
-      return `${timeOpening("common")} 这种问法最稳，因为先抓共性，比急着猜准更有用。${baseTone()} ${prompt} ${timingTone()} 所以先不会跑掉的，多半还是日主、格局、主导十神和这步运推出来的主轴。`;
+      return buildTimeReply("common", prompt);
     }
     if (timeDiffHit) {
-      return `${timeOpening("diff")} 真正会被时柱拉开的，往往不是整张盘翻掉，而是某些细处开始分出不同走法。${baseTone()} ${prompt} ${timingTone()} 所以更容易变化的，多半会落在关系表达、晚运感受、以及事情最后是怎么落地。`;
+      return buildTimeReply("diff", prompt);
     }
     if (timeCalibrationHit) {
-      return `${timeOpening("calibration")} 校时这件事，不是一下子拍脑袋定，而是先把不变的底色看稳，再拿会分叉的地方去对照经历。${baseTone()} ${prompt} ${timingTone()} 越是把问题问细，比如哪几年关系、工作、搬动最明显，时柱就越容易慢慢缩准。`;
+      return buildTimeReply("calibration", prompt);
     }
-    return `${timeOpening("default")} ${timeRead("default")} ${baseTone()} 问到时辰，最稳的看法是先把不会变的底色捞出来，再看时柱会把哪些细节拉开。${prompt} ${timingTone()} ${finishTone("time")}`;
+    return buildTimeReply("default", prompt);
   }
   if (hits.expression) {
-    return `${openingTone("expression")} ${baseTone()} 真正要看的，不是心里有没有想法，而是这股想法最后落到哪里，才不会转一圈又闷回自己身上。${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("expression")}`;
+    return buildExpressionReply();
   }
   if (hits.burnout) {
-    return `${openingTone("burnout")} ${baseTone()} 问到内耗，往往不是事情太难，而是心里那股力往哪儿使。${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("burnout")}`;
+    return buildBurnoutReply();
   }
   if (hits.security) {
-    return `${openingTone("security")} ${baseTone()} 问到安全感，先看的不是别人做得够不够，而是这张盘真正靠什么才能慢慢松下来。${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("security")}`;
+    return buildSecurityReply();
   }
   if (hits.change) {
-    return `${openingTone("change")} ${baseTone()} 问到变化，关键不是会不会变，而是先往哪一层变。${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("change")}`;
+    return buildChangeReply();
   }
   if (hits.theme) {
-    return `${openingTone("theme")} ${baseTone()} 这会儿最该先抓住的，不是外面哪件事最吵，而是命盘里哪一层力量已经先冒到前面来了。${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("theme")}`;
+    return buildThemeReply();
   }
   return `${openingTone("overall")} ${baseTone()} ${driveTone()} ${themeTone()} ${timingTone()} ${finishTone("overall")}`;
 }
@@ -1390,10 +2136,17 @@ function renderFollowupThread() {
     .join("");
 }
 
+function renderFollowupUpgrade() {
+  if (!followupUpgrade) return;
+  const shouldShow = followupHistory.length >= 1;
+  followupUpgrade.classList.toggle("is-hidden", !shouldShow);
+}
+
 function renderResult(formData, result) {
   latestFormData = formData;
   latestResult = result;
   followupHistory = [];
+  dreamHistory = [];
   resultEmpty.classList.add("is-hidden");
   resultContent.classList.remove("is-hidden");
   setTheme(result.theme);
@@ -1459,9 +2212,22 @@ function renderResult(formData, result) {
   if (followupResponse) {
     followupResponse.classList.add("is-hidden");
   }
+  if (followupUpgrade) {
+    followupUpgrade.classList.add("is-hidden");
+  }
   if (followupThread) {
     followupThread.innerHTML = "";
   }
+  if (dreamResponse) {
+    dreamResponse.classList.add("is-hidden");
+  }
+  if (dreamThread) {
+    dreamThread.innerHTML = "";
+  }
+  if (dreamInput) {
+    dreamInput.value = "";
+  }
+  updateDreamQuotaUI();
 
   resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1574,6 +2340,7 @@ if (followupForm) {
     const track = detectFollowupTrack(question);
     followupHistory.push({ question, answer, track });
     renderFollowupThread();
+    renderFollowupUpgrade();
     followupResponse.classList.remove("is-hidden");
     renderFollowupSuggestions(
       { ...latestFormData, focus: track === "overall" ? latestFormData.focus : track },
@@ -1588,6 +2355,51 @@ if (followupForm) {
     followupResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 }
+
+if (dreamForm) {
+  dreamForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!latestResult || !latestFormData || !dreamInput) return;
+
+    const question = dreamInput.value.trim();
+    if (!question) {
+      dreamInput.reportValidity?.();
+      dreamInput.focus();
+      return;
+    }
+
+    const remaining = getDreamRemaining();
+    if (remaining <= 0) {
+      updateDreamQuotaUI();
+      return;
+    }
+
+    if (!consumeDreamQuota()) {
+      updateDreamQuotaUI();
+      return;
+    }
+
+    const answer = buildDreamAnswer(question, latestFormData, latestResult);
+    dreamHistory.push({ question, answer });
+    renderDreamThread();
+    if (dreamResponse) {
+      dreamResponse.classList.remove("is-hidden");
+      dreamResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+    dreamInput.value = "";
+    updateDreamQuotaUI();
+  });
+}
+
+dreamUnlockButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!dreamInput) return;
+    dreamInput.focus();
+    dreamInput.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+});
+
+updateDreamQuotaUI();
 
 window.renderBaziPreview = renderResult;
 

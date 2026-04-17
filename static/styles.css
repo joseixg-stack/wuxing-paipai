@@ -723,6 +723,72 @@ th {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.28));
 }
 
+.dream-feature-card {
+  background: linear-gradient(180deg, rgba(255, 248, 242, 0.6), rgba(255, 239, 229, 0.28));
+}
+
+.dream-feature-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.dream-feature-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.dream-feature-copy p {
+  margin: 0;
+  line-height: 1.9;
+}
+
+.dream-feature-action {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  justify-items: start;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.dream-quota-note,
+.dream-form-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.dream-form {
+  margin-top: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.dream-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dream-response {
+  margin-top: 20px;
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.18));
+  display: grid;
+  gap: 16px;
+}
+
+.dream-response.is-hidden {
+  display: none;
+}
+
 .featured-header h4 {
   font-size: clamp(2rem, 4vw, 2.8rem);
   line-height: 1;
@@ -998,6 +1064,78 @@ th {
   line-height: 1.8;
 }
 
+.followup-upgrade {
+  display: grid;
+  gap: 16px;
+}
+
+.followup-upgrade.is-hidden {
+  display: none;
+}
+
+.followup-upgrade-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.upgrade-card {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.18));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.premium-card {
+  background: linear-gradient(180deg, rgba(255, 245, 238, 0.42), rgba(255, 232, 220, 0.24));
+}
+
+.upgrade-card h5,
+.upgrade-card p {
+  margin: 0;
+}
+
+.upgrade-card p {
+  line-height: 1.9;
+}
+
+.upgrade-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.upgrade-tag.unlock {
+  background: rgba(229, 246, 236, 0.85);
+}
+
+.upgrade-tag.paid {
+  background: rgba(255, 228, 214, 0.88);
+}
+
+.upgrade-examples {
+  display: grid;
+  gap: 8px;
+}
+
+.upgrade-examples span {
+  display: block;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.dream-button {
+  justify-self: flex-start;
+}
+
 .followup-thread {
   display: grid;
   gap: 14px;
@@ -1024,6 +1162,14 @@ th {
   color: var(--muted);
 }
 
+.followup-turn .turn-answer p {
+  margin: 0 0 12px;
+}
+
+.followup-turn .turn-answer p:last-child {
+  margin-bottom: 0;
+}
+
 @keyframes drift {
   from {
     transform: translate3d(0, 0, 0) scale(1);
@@ -1042,9 +1188,15 @@ th {
   .analysis-grid,
   .annual-grid,
   .chip-grid,
+  .followup-upgrade-grid,
+  .dream-feature-shell,
   .insight-grid,
   .insight-grid-compact {
     grid-template-columns: 1fr;
+  }
+
+  .dream-actions {
+    align-items: flex-start;
   }
 
   .landing-workspace {

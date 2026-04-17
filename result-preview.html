@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Huninn&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./static/styles.css?v=20260416i" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260417d" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -182,6 +182,49 @@
                     <div id="annual-cards" class="annual-grid"></div>
                   </article>
 
+                  <article class="result-card wide glow-card dream-feature-card">
+                    <div class="card-header">
+                      <h4>梦境解读</h4>
+                      <p>把昨晚的梦放回这张命盘里看。不是单独解梦，而是看这个梦更像在提醒眼下哪一层情绪、关系或现实压力。</p>
+                    </div>
+                    <div class="dream-feature-shell">
+                      <div class="dream-feature-copy">
+                        <p>这个模块最适合解那些醒来后还留着情绪的梦，比如考试、迟到、赶路、迷路、掉牙、回家、前任、已故亲人、反复追赶这类主题。越能说清楚梦里最刺的一幕，解读会越稳。</p>
+                        <div class="upgrade-examples">
+                          <span>示例：梦见考试怎么写也写不完，往往更像在提醒评价压力和责任感。</span>
+                          <span>示例：梦见一直找不到路或反复回家，更像在提醒现实里有件事还没真正落定。</span>
+                        </div>
+                      </div>
+                      <div class="dream-feature-action">
+                        <span class="upgrade-tag unlock">每日 3 次免费</span>
+                        <p class="dream-quota-note" id="dream-quota-note">先从一场最在意的梦开始问。</p>
+                        <button type="button" class="button secondary dream-button" data-dream-unlock>开始解梦</button>
+                      </div>
+                    </div>
+                    <form class="dream-form" id="dream-form">
+                      <label>
+                        <span>昨晚最记得的一幕</span>
+                        <textarea
+                          id="dream-input"
+                          rows="4"
+                          placeholder="例如：梦见考试一直写不完，醒来后心里还是很紧。"
+                          required
+                        ></textarea>
+                      </label>
+                      <div class="dream-actions">
+                        <button type="submit" class="button primary">解读这个梦</button>
+                        <p class="dream-form-note">建议把梦里最刺的一幕、最强的情绪、醒来后最放不下的点说出来。</p>
+                      </div>
+                    </form>
+                    <section class="dream-response is-hidden" id="dream-response">
+                      <div class="followup-response-header">
+                        <h5>把梦放回这张命盘里看</h5>
+                        <p>先看梦在演什么，再看这张盘眼下最容易被触动的是哪一层。</p>
+                      </div>
+                      <div id="dream-thread" class="followup-thread"></div>
+                    </section>
+                  </article>
+
                   <article class="result-card wide glow-card followup-card">
                     <div class="card-header">
                       <h4>继续问一个问题</h4>
@@ -205,6 +248,19 @@
                         </div>
                         <div id="followup-thread" class="followup-thread"></div>
                       </section>
+                      <section class="followup-upgrade is-hidden" id="followup-upgrade">
+                        <div class="followup-upgrade-grid">
+                          <article class="upgrade-card">
+                            <span class="upgrade-tag unlock">已解锁</span>
+                            <h5>继续细看</h5>
+                            <p>第 1 次追问之后，可以顺着这一层继续往下看。更适合把问题收窄到一个具体场景，比如“这两年换工作最该避开什么”或“关系里最容易先卡在哪一句话”。</p>
+                            <div class="upgrade-examples">
+                              <span>示例：这步运最先推到眼前的现实安排是什么？</span>
+                              <span>示例：这层关系最怕卡在回应、边界，还是节奏？</span>
+                            </div>
+                          </article>
+                        </div>
+                      </section>
                     </div>
                   </article>
                 </section>
@@ -215,7 +271,7 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260416i"></script>
+    <script src="./static/calculator.js?v=20260417d"></script>
     <script>
       const previewFormData = {
         name: "张三",
