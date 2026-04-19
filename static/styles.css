@@ -789,6 +789,62 @@ th {
   display: none;
 }
 
+.dream-paywall {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(255, 184, 160, 0.25), transparent 38%),
+    linear-gradient(135deg, rgba(255, 245, 236, 0.72), rgba(255, 255, 255, 0.36));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.36);
+}
+
+.dream-paywall.is-hidden {
+  display: none;
+}
+
+.dream-paywall h5,
+.dream-paywall p,
+.compatibility-card h5,
+.compatibility-card p {
+  margin: 0;
+}
+
+.dream-paywall p,
+.compatibility-card p {
+  line-height: 1.85;
+  color: var(--muted);
+}
+
+.compatibility-card {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(204, 226, 255, 0.38), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 247, 236, 0.24));
+}
+
+.compatibility-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  gap: 18px;
+}
+
+.compatibility-copy,
+.compatibility-action {
+  display: grid;
+  gap: 12px;
+}
+
+.compatibility-action {
+  align-content: start;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.32);
+}
+
 .featured-header h4 {
   font-size: clamp(2rem, 4vw, 2.8rem);
   line-height: 1;
@@ -1190,6 +1246,7 @@ th {
   .chip-grid,
   .followup-upgrade-grid,
   .dream-feature-shell,
+  .compatibility-shell,
   .insight-grid,
   .insight-grid-compact {
     grid-template-columns: 1fr;
@@ -1197,6 +1254,10 @@ th {
 
   .dream-actions {
     align-items: flex-start;
+  }
+
+  .dream-paywall {
+    display: grid;
   }
 
   .landing-workspace {

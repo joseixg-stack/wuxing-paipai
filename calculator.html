@@ -437,17 +437,48 @@
                         <p class="dream-form-note">建议把梦里最刺的一幕、最强的情绪、醒来后最放不下的点说出来。</p>
                       </div>
                     </form>
-                    <p class="form-feedback is-hidden" id="dream-feedback" aria-live="polite"></p>
-                    <section class="dream-response is-hidden" id="dream-response">
-                      <div class="followup-response-header">
-                        <h5>把梦放回这张命盘里看</h5>
+                      <p class="form-feedback is-hidden" id="dream-feedback" aria-live="polite"></p>
+                      <section class="dream-paywall is-hidden" id="dream-paywall">
+                        <div>
+                          <span class="upgrade-tag paid">付费解锁</span>
+                          <h5>今日梦境深读</h5>
+                          <p>今天 3 次免费解梦已经用完。如果这个梦还反复挂在心里，可以解锁一次更完整的深读：会把梦里的关键词、醒来后的情绪、当前命盘主题和今天适合先做的事放在一起看。</p>
+                        </div>
+                        <button type="button" class="button primary">解锁梦境深读</button>
+                      </section>
+                      <section class="dream-response is-hidden" id="dream-response">
+                        <div class="followup-response-header">
+                          <h5>把梦放回这张命盘里看</h5>
                         <p>先看梦在演什么，再看这张盘眼下最容易被触动的是哪一层。</p>
                       </div>
                       <div id="dream-thread" class="followup-thread"></div>
-                    </section>
-                  </article>
+                      </section>
+                    </article>
 
-                  <article class="result-card wide glow-card followup-card">
+                    <article class="result-card wide glow-card compatibility-card">
+                      <div class="card-header">
+                        <h4>八字合盘</h4>
+                        <p>适合想看两个人的相处节奏、关系卡点和长期匹配度。这里不只看合不合，更看怎么相处才不互相消耗。</p>
+                      </div>
+                      <div class="compatibility-shell">
+                        <div class="compatibility-copy">
+                          <span class="upgrade-tag paid">付费专项</span>
+                          <h5>关系合盘深读</h5>
+                          <p>把两个人的日主、五行互补、夫妻宫、十神互动和大运节奏放在一起看。适合恋爱、婚姻、暧昧、复合、长期合作关系。</p>
+                          <div class="upgrade-examples">
+                            <span>示例：谁更需要安全感，谁更容易先退一步？</span>
+                            <span>示例：这段关系是互相滋养，还是容易一方长期消耗？</span>
+                            <span>示例：接下来两三年适合确认关系，还是先把现实问题谈清？</span>
+                          </div>
+                        </div>
+                        <div class="compatibility-action">
+                          <p>建议先完成自己的命盘，再解锁双方合盘。这样系统会先知道你的关系需求，再去看对方如何与你互动。</p>
+                          <button type="button" class="button primary">解锁合盘深读</button>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article class="result-card wide glow-card followup-card">
                     <div class="card-header">
                       <h4>继续问一个问题</h4>
                       <p>先看总盘，再挑一件你现在最在意的事慢慢问，会更容易把结果看进心里。</p>
@@ -498,6 +529,6 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260417e"></script>
+    <script src="./static/calculator.js?v=20260419a"></script>
   </body>
 </html>

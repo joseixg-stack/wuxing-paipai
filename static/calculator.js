@@ -25,6 +25,7 @@ const dreamResponse = document.getElementById("dream-response");
 const dreamThread = document.getElementById("dream-thread");
 const dreamQuotaNote = document.getElementById("dream-quota-note");
 const dreamFeedback = document.getElementById("dream-feedback");
+const dreamPaywall = document.getElementById("dream-paywall");
 const birthdayInput = document.getElementById("birthday-input");
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
@@ -170,6 +171,9 @@ function consumeDreamQuota() {
 function updateDreamQuotaUI() {
   if (!dreamQuotaNote || !dreamForm) return;
   const remaining = getDreamRemaining();
+  if (dreamPaywall) {
+    dreamPaywall.classList.toggle("is-hidden", remaining > 0);
+  }
   if (remaining > 0) {
     dreamQuotaNote.textContent = `今日还可免费解梦 ${remaining} 次。`;
     if (dreamInput) dreamInput.disabled = false;
@@ -179,7 +183,7 @@ function updateDreamQuotaUI() {
       submitButton.textContent = "解读这个梦";
     }
   } else {
-    dreamQuotaNote.textContent = "今日 3 次免费解梦已经用完，明天还能继续来问。";
+    dreamQuotaNote.textContent = "今日 3 次免费解梦已经用完。若这个梦还放不下，可以解锁一次梦境深读。";
     if (dreamInput) dreamInput.disabled = true;
     const submitButton = dreamForm.querySelector('button[type="submit"]');
     if (submitButton) {
@@ -2391,16 +2395,16 @@ if (dreamForm) {
     }
 
     const remaining = getDreamRemaining();
-    if (remaining <= 0) {
-      setDreamFeedback("今日 3 次免费解梦已经用完，明天还能继续来问。");
-      updateDreamQuotaUI();
-      return;
-    }
+      if (remaining <= 0) {
+        setDreamFeedback("今日 3 次免费解梦已经用完。下面可以解锁梦境深读，把这场梦看得更完整。");
+        updateDreamQuotaUI();
+        return;
+      }
 
-    if (!consumeDreamQuota()) {
-      setDreamFeedback("今日免费次数已用完，请明天再来继续解梦。");
-      updateDreamQuotaUI();
-      return;
+      if (!consumeDreamQuota()) {
+        setDreamFeedback("今日免费次数已用完。下面可以解锁梦境深读，继续看这场梦真正卡住的地方。");
+        updateDreamQuotaUI();
+        return;
     }
 
     try {
