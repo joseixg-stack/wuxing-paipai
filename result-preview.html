@@ -8,7 +8,7 @@
       name="description"
       content="五行拍拍结果预览页，用固定示例快速查看命盘结果、温柔解读、神煞、梦境解读与继续问答。"
     />
-    <link rel="stylesheet" href="./static/styles.css?v=20260419b" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260419c" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -194,7 +194,7 @@
                         </div>
                       </div>
                       <div class="dream-feature-action">
-                        <span class="upgrade-tag unlock">每日 3 次免费</span>
+                        <span class="upgrade-tag unlock">每日 1 次免费</span>
                         <p class="dream-quota-note" id="dream-quota-note">先从一场最在意的梦开始问。</p>
                         <button type="button" class="button secondary dream-button" data-dream-unlock>开始解梦</button>
                       </div>
@@ -219,9 +219,9 @@
                         <div>
                           <span class="upgrade-tag paid">付费解锁</span>
                           <h5>今日梦境深读</h5>
-                          <p>今天 3 次免费解梦已经用完。如果这个梦还反复挂在心里，可以解锁一次更完整的深读：会把梦里的关键词、醒来后的情绪、当前命盘主题和今天适合先做的事放在一起看。</p>
+                          <p>今天的免费解梦已经用完。如果这个梦还反复挂在心里，可以用 9.9 解锁一次更完整的深读。</p>
                         </div>
-                        <button type="button" class="button primary" data-checkout-scroll>解锁梦境深读</button>
+                        <button type="button" class="button primary" data-checkout-scroll data-checkout-service="dream">9.9 解锁梦境深读</button>
                       </section>
                       <section class="dream-response is-hidden" id="dream-response">
                         <div class="followup-response-header">
@@ -239,7 +239,7 @@
                       </div>
                       <div class="compatibility-shell">
                         <div class="compatibility-copy">
-                          <span class="upgrade-tag paid">付费专项</span>
+                          <span class="upgrade-tag unlock">免费体验 1 次</span>
                           <h5>关系合盘深读</h5>
                           <p>把两个人的日主、五行互补、夫妻宫、十神互动和大运节奏放在一起看。适合恋爱、婚姻、暧昧、复合、长期合作关系。</p>
                           <div class="upgrade-examples">
@@ -249,39 +249,29 @@
                           </div>
                         </div>
                         <div class="compatibility-action">
-                          <p>建议先完成自己的命盘，再解锁双方合盘。这样系统会先知道你的关系需求，再去看对方如何与你互动。</p>
-                          <button type="button" class="button primary" data-checkout-scroll>解锁合盘深读</button>
+                          <p>先用 1 次免费合盘看大方向；如果还想继续细看两个人的卡点和推进节奏，再用 9.9 解锁深读。</p>
+                          <button type="button" class="button primary" data-compatibility-action>免费体验合盘</button>
                         </div>
                       </div>
+                      <section class="compatibility-response is-hidden" id="compatibility-response"></section>
                     </article>
 
-                    <article class="result-card wide glow-card checkout-card" id="checkout-card">
+                    <article class="result-card wide glow-card checkout-card is-hidden" id="checkout-card">
                       <div class="card-header">
-                        <h4>付费解锁说明</h4>
-                        <p>先用人工收款跑通第一版服务。付款后保存截图，回到你看到这个网站的平台私信发送截图、昵称和想看的问题。</p>
+                        <h4 id="checkout-title">确认解锁</h4>
+                        <p id="checkout-description">扫码完成 9.9 付款后，回到这里点击“我已完成支付”，页面会继续展开对应内容。</p>
                       </div>
                       <div class="checkout-grid">
                         <div class="checkout-plan">
-                          <span class="upgrade-tag paid">梦境深读</span>
-                          <h5>¥19.9 / 次</h5>
-                          <p>适合梦醒后还放不下的梦。会结合梦里最刺的一幕、当下情绪、命盘主题和今天适合先做的事来解读。</p>
-                        </div>
-                        <div class="checkout-plan">
-                          <span class="upgrade-tag paid">八字合盘</span>
-                          <h5>¥49.9 / 次</h5>
-                          <p>适合看两个人的相处节奏、关系卡点、长期匹配度和接下来两三年的关系推进方式。</p>
-                        </div>
-                        <div class="checkout-note">
-                          <strong>收款方式</strong>
-                          <p>当前先用微信收款码测试付费意愿。扫码付款后请保存截图，截图就是人工核对订单的凭证。</p>
-                          <strong>交付方式</strong>
-                          <p>客服第一版就是你本人：用户从小红书、朋友圈、视频号或其他入口看到网站，就回到对应平台私信你。后续可以换成专门客服微信、邮箱或自动支付系统。</p>
-                          <strong>隐私提示</strong>
-                          <p>公开放收款码会展示微信支付里的头像与昵称信息。若后续正式投放，建议换成专门收款号或商户收款码。</p>
+                          <span class="upgrade-tag paid" id="checkout-service-label">付费解锁</span>
+                          <h5 id="checkout-price">¥9.9 / 次</h5>
+                          <p id="checkout-service-copy">适合把一个具体问题继续往下看。付款完成后，页面会回到刚才的模块。</p>
                         </div>
                         <div class="checkout-qr-card">
                           <img src="./static/payments/wechat-pay.png" alt="微信收款码" />
-                          <p>付款后请截图，备注想看的服务：梦境深读 / 八字合盘。</p>
+                          <p>请使用微信扫码支付 9.9。当前为测试版收款，支付后点击下方按钮继续查看。</p>
+                          <button type="button" class="button primary" id="checkout-complete">我已完成支付，继续查看</button>
+                          <button type="button" class="button ghost" id="checkout-cancel">暂时不解锁</button>
                         </div>
                       </div>
                     </article>
@@ -289,7 +279,7 @@
                     <article class="result-card wide glow-card followup-card">
                     <div class="card-header">
                       <h4>继续问一个问题</h4>
-                      <p>先看总盘，再挑一件你现在最在意的事慢慢问，会更容易把结果看进心里。</p>
+                      <p>每天 1 次免费追问。超过后可以 9.9 解锁一次继续看。</p>
                     </div>
                     <div class="followup-shell">
                       <div class="followup-suggestions" id="followup-suggestions"></div>
@@ -317,9 +307,9 @@
                       <section class="followup-upgrade is-hidden" id="followup-upgrade">
                         <div class="followup-upgrade-grid">
                           <article class="upgrade-card">
-                            <span class="upgrade-tag unlock">已解锁</span>
+                            <span class="upgrade-tag paid">9.9 / 次</span>
                             <h5>继续细看</h5>
-                            <p>第 1 次追问之后，可以顺着这一层继续往下看。更适合把问题收窄到一个具体场景，比如“这两年换工作最该避开什么”或“关系里最容易先卡在哪一句话”。</p>
+                            <p>今天的免费追问用完后，还可以把问题收窄到一个具体场景继续问。比如“这两年换工作最该避开什么”或“关系里最容易先卡在哪一句话”。</p>
                             <div class="upgrade-examples">
                               <span>示例：这步运最先推到眼前的现实安排是什么？</span>
                               <span>示例：这层关系最怕卡在回应、边界，还是节奏？</span>
@@ -337,7 +327,7 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260419b"></script>
+    <script src="./static/calculator.js?v=20260419c"></script>
     <script>
       const previewFormData = {
         name: "张三",

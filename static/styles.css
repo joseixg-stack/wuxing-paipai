@@ -851,6 +851,11 @@ th {
     linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 245, 236, 0.22));
 }
 
+.checkout-card.is-hidden,
+.compatibility-response.is-hidden {
+  display: none;
+}
+
 .checkout-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -870,6 +875,7 @@ th {
 .checkout-qr-card {
   justify-items: center;
   text-align: center;
+  align-content: start;
   background:
     radial-gradient(circle at 50% 0%, rgba(195, 236, 213, 0.46), transparent 52%),
     rgba(255, 255, 255, 0.34);
@@ -897,6 +903,32 @@ th {
 .checkout-qr-card p {
   color: var(--muted);
   line-height: 1.8;
+}
+
+.checkout-qr-card .button {
+  width: min(100%, 280px);
+}
+
+.compatibility-response {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.18));
+}
+
+.compatibility-response h5,
+.compatibility-response p {
+  margin: 0;
+}
+
+.compatibility-response h5 {
+  font-size: 1.25rem;
+}
+
+.compatibility-response p {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.9;
 }
 
 .featured-header h4 {

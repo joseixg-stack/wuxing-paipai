@@ -28,6 +28,15 @@ const dreamFeedback = document.getElementById("dream-feedback");
 const dreamPaywall = document.getElementById("dream-paywall");
 const checkoutCard = document.getElementById("checkout-card");
 const checkoutButtons = Array.from(document.querySelectorAll("[data-checkout-scroll]"));
+const checkoutTitle = document.getElementById("checkout-title");
+const checkoutDescription = document.getElementById("checkout-description");
+const checkoutServiceLabel = document.getElementById("checkout-service-label");
+const checkoutPrice = document.getElementById("checkout-price");
+const checkoutServiceCopy = document.getElementById("checkout-service-copy");
+const checkoutCompleteButton = document.getElementById("checkout-complete");
+const checkoutCancelButton = document.getElementById("checkout-cancel");
+const compatibilityButtons = Array.from(document.querySelectorAll("[data-compatibility-action]"));
+const compatibilityResponse = document.getElementById("compatibility-response");
 const birthdayInput = document.getElementById("birthday-input");
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
@@ -37,9 +46,39 @@ let latestResult = null;
 let latestFormData = null;
 let followupHistory = [];
 let dreamHistory = [];
+let pendingCheckoutService = null;
+const paidUnlocks = {
+  dream: 0,
+  followup: 0,
+  compatibility: 0,
+};
 
-const DREAM_DAILY_LIMIT = 3;
+const DREAM_DAILY_LIMIT = 1;
 const DREAM_STORAGE_KEY = "wuxing-paipai-dream-quota-v1";
+const FOLLOWUP_DAILY_LIMIT = 1;
+const FOLLOWUP_STORAGE_KEY = "wuxing-paipai-followup-quota-v1";
+const COMPATIBILITY_STORAGE_KEY = "wuxing-paipai-compatibility-free-v1";
+
+const CHECKOUT_SERVICES = {
+  dream: {
+    title: "解锁梦境深读",
+    label: "梦境深读",
+    copy: "适合把一场醒来后还放不下的梦继续看深。会结合梦里最刺的一幕、当下情绪和命盘主题展开。",
+    returnText: "支付完成后，会回到梦境解读继续展开。",
+  },
+  followup: {
+    title: "解锁继续追问",
+    label: "继续追问",
+    copy: "适合把眼前最在意的问题继续往下问一次。比如关系、事业、财运或时辰校准，都可以围绕刚才的命盘继续看。",
+    returnText: "支付完成后，会回到继续问答继续生成回复。",
+  },
+  compatibility: {
+    title: "解锁合盘深读",
+    label: "八字合盘",
+    copy: "适合继续看两个人的相处节奏、关系卡点、长期匹配度和接下来两三年的推进方式。",
+    returnText: "支付完成后，会自动展开合盘深读内容。",
+  },
+};
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -157,6 +196,59 @@ function saveDreamQuotaState(state) {
   }
 }
 
+function getDailyQuotaState(storageKey) {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const parsed = raw ? JSON.parse(raw) : null;
+    const today = getTodayQuotaKey();
+    if (!parsed || parsed.date !== today) {
+      return { date: today, used: 0 };
+    }
+    return { date: today, used: Number(parsed.used) || 0 };
+  } catch {
+    return { date: getTodayQuotaKey(), used: 0 };
+  }
+}
+
+function saveDailyQuotaState(storageKey, state) {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  } catch {
+    // Local quota is only a soft product gate; storage errors should not break the page.
+  }
+}
+
+function getDailyRemaining(storageKey, limit) {
+  const state = getDailyQuotaState(storageKey);
+  return Math.max(0, limit - state.used);
+}
+
+function consumeDailyQuota(storageKey, limit) {
+  const state = getDailyQuotaState(storageKey);
+  if (state.used >= limit) return false;
+  state.used += 1;
+  saveDailyQuotaState(storageKey, state);
+  return true;
+}
+
+function hasUsedCompatibilityFree() {
+  try {
+    return localStorage.getItem(COMPATIBILITY_STORAGE_KEY) === "used";
+  } catch {
+    return false;
+  }
+}
+
+function consumeCompatibilityFree() {
+  if (hasUsedCompatibilityFree()) return false;
+  try {
+    localStorage.setItem(COMPATIBILITY_STORAGE_KEY, "used");
+  } catch {
+    // If storage is unavailable, still allow the first in-session experience.
+  }
+  return true;
+}
+
 function getDreamRemaining() {
   const state = getDreamQuotaState();
   return Math.max(0, DREAM_DAILY_LIMIT - state.used);
@@ -174,18 +266,19 @@ function updateDreamQuotaUI() {
   if (!dreamQuotaNote || !dreamForm) return;
   const remaining = getDreamRemaining();
   if (dreamPaywall) {
-    dreamPaywall.classList.toggle("is-hidden", remaining > 0);
+    dreamPaywall.classList.toggle("is-hidden", remaining > 0 || paidUnlocks.dream > 0);
   }
-  if (remaining > 0) {
-    dreamQuotaNote.textContent = `今日还可免费解梦 ${remaining} 次。`;
+  if (remaining > 0 || paidUnlocks.dream > 0) {
+    dreamQuotaNote.textContent =
+      paidUnlocks.dream > 0 && remaining <= 0 ? "已解锁 1 次梦境深读，可以继续写下这个梦。" : `今日还可免费解梦 ${remaining} 次。`;
     if (dreamInput) dreamInput.disabled = false;
     const submitButton = dreamForm.querySelector('button[type="submit"]');
     if (submitButton) {
       submitButton.disabled = false;
-      submitButton.textContent = "解读这个梦";
+      submitButton.textContent = paidUnlocks.dream > 0 && remaining <= 0 ? "继续深读这个梦" : "解读这个梦";
     }
   } else {
-    dreamQuotaNote.textContent = "今日 3 次免费解梦已经用完。若这个梦还放不下，可以解锁一次梦境深读。";
+    dreamQuotaNote.textContent = "今日免费解梦已经用完。若这个梦还放不下，可以 9.9 解锁一次梦境深读。";
     if (dreamInput) dreamInput.disabled = true;
     const submitButton = dreamForm.querySelector('button[type="submit"]');
     if (submitButton) {
@@ -193,6 +286,71 @@ function updateDreamQuotaUI() {
       submitButton.textContent = "今日次数已用完";
     }
   }
+}
+
+function openCheckout(service = "followup") {
+  const config = CHECKOUT_SERVICES[service] || CHECKOUT_SERVICES.followup;
+  pendingCheckoutService = service;
+  if (checkoutTitle) checkoutTitle.textContent = config.title;
+  if (checkoutDescription) checkoutDescription.textContent = config.returnText;
+  if (checkoutServiceLabel) checkoutServiceLabel.textContent = config.label;
+  if (checkoutPrice) checkoutPrice.textContent = "¥9.9 / 次";
+  if (checkoutServiceCopy) checkoutServiceCopy.textContent = config.copy;
+  if (checkoutCard) {
+    checkoutCard.classList.remove("is-hidden");
+    checkoutCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function closeCheckout() {
+  if (checkoutCard) checkoutCard.classList.add("is-hidden");
+  pendingCheckoutService = null;
+}
+
+function getFollowupRemaining() {
+  return getDailyRemaining(FOLLOWUP_STORAGE_KEY, FOLLOWUP_DAILY_LIMIT);
+}
+
+function canUseFollowup() {
+  return getFollowupRemaining() > 0 || paidUnlocks.followup > 0;
+}
+
+function consumeFollowupAccess() {
+  if (getFollowupRemaining() > 0) {
+    return consumeDailyQuota(FOLLOWUP_STORAGE_KEY, FOLLOWUP_DAILY_LIMIT);
+  }
+  if (paidUnlocks.followup > 0) {
+    paidUnlocks.followup -= 1;
+    return true;
+  }
+  return false;
+}
+
+function renderCompatibilityReading(mode = "free") {
+  if (!compatibilityResponse || !latestResult) return;
+  const dayMaster = latestResult.dayMaster?.stem || "日主";
+  const dominant = latestResult.elements?.dominant || latestResult.theme?.element || "命盘主气";
+  const currentLuck = latestResult.luck?.currentDaYun?.ganzhi || "当前大运";
+  const isPaid = mode === "paid";
+  compatibilityResponse.innerHTML = `
+    <h5>${isPaid ? "合盘深读已解锁" : "免费合盘体验"}</h5>
+    <p>合盘不是只看“合不合”三个字，而是先看两个人放在一起时，谁更需要回应，谁更容易把压力收在心里。以这张盘为底，${dayMaster}日主会更在意关系里的稳定感；${dominant}偏明显时，容易先看现实是否站得住。</p>
+    <p>${currentLuck}这步运会把关系里的节奏问题推到台前。若要继续细看，可以把对方的生日或四柱补进来，再看两个人是互相托举，还是某一方长期觉得累。</p>
+  `;
+  compatibilityResponse.classList.remove("is-hidden");
+  compatibilityResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function updateCompatibilityButtons() {
+  compatibilityButtons.forEach((button) => {
+    if (hasUsedCompatibilityFree()) {
+      button.textContent = "9.9 解锁合盘深读";
+      button.dataset.checkoutService = "compatibility";
+    } else {
+      button.textContent = "免费体验合盘";
+      delete button.dataset.checkoutService;
+    }
+  });
 }
 
 function getFeedbackElement(targetForm) {
@@ -2239,6 +2397,14 @@ function renderResult(formData, result) {
   if (followupThread) {
     followupThread.innerHTML = "";
   }
+  if (checkoutCard) {
+    checkoutCard.classList.add("is-hidden");
+  }
+  if (compatibilityResponse) {
+    compatibilityResponse.classList.add("is-hidden");
+    compatibilityResponse.innerHTML = "";
+  }
+  updateCompatibilityButtons();
   if (dreamResponse) {
     dreamResponse.classList.add("is-hidden");
   }
@@ -2358,6 +2524,16 @@ if (followupForm) {
       return;
     }
 
+    if (!canUseFollowup()) {
+      openCheckout("followup");
+      return;
+    }
+
+    if (!consumeFollowupAccess()) {
+      openCheckout("followup");
+      return;
+    }
+
     const answer = buildFollowupAnswerV2(question, latestFormData, latestResult);
     const track = detectFollowupTrack(question);
     followupHistory.push({ question, answer, track });
@@ -2397,16 +2573,22 @@ if (dreamForm) {
     }
 
     const remaining = getDreamRemaining();
-      if (remaining <= 0) {
-        setDreamFeedback("今日 3 次免费解梦已经用完。下面可以解锁梦境深读，把这场梦看得更完整。");
-        updateDreamQuotaUI();
-        return;
-      }
+    if (remaining <= 0 && paidUnlocks.dream <= 0) {
+      setDreamFeedback("今日免费解梦已经用完。下面可以 9.9 解锁梦境深读，把这场梦看得更完整。");
+      updateDreamQuotaUI();
+      openCheckout("dream");
+      return;
+    }
 
-      if (!consumeDreamQuota()) {
-        setDreamFeedback("今日免费次数已用完。下面可以解锁梦境深读，继续看这场梦真正卡住的地方。");
-        updateDreamQuotaUI();
-        return;
+    if (remaining > 0) {
+      consumeDreamQuota();
+    } else if (paidUnlocks.dream > 0) {
+      paidUnlocks.dream -= 1;
+    } else {
+      setDreamFeedback("今日免费次数已用完。下面可以 9.9 解锁梦境深读，继续看这场梦真正卡住的地方。");
+      updateDreamQuotaUI();
+      openCheckout("dream");
+      return;
     }
 
     try {
@@ -2439,11 +2621,52 @@ dreamUnlockButtons.forEach((button) => {
 
 checkoutButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (!checkoutCard) return;
-    checkoutCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    openCheckout(button.dataset.checkoutService || "followup");
   });
 });
 
+compatibilityButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!latestResult || !latestFormData) return;
+    if (!hasUsedCompatibilityFree()) {
+      consumeCompatibilityFree();
+      renderCompatibilityReading("free");
+      updateCompatibilityButtons();
+      return;
+    }
+    if (paidUnlocks.compatibility > 0) {
+      paidUnlocks.compatibility -= 1;
+      renderCompatibilityReading("paid");
+      return;
+    }
+    openCheckout("compatibility");
+  });
+});
+
+if (checkoutCompleteButton) {
+  checkoutCompleteButton.addEventListener("click", () => {
+    const service = pendingCheckoutService || "followup";
+    paidUnlocks[service] = (paidUnlocks[service] || 0) + 1;
+    closeCheckout();
+    updateDreamQuotaUI();
+    if (service === "dream" && dreamInput) {
+      dreamInput.disabled = false;
+      dreamInput.focus();
+      dreamInput.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } else if (service === "followup" && followupInput) {
+      followupInput.focus();
+      followupInput.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } else if (service === "compatibility") {
+      renderCompatibilityReading("paid");
+    }
+  });
+}
+
+if (checkoutCancelButton) {
+  checkoutCancelButton.addEventListener("click", closeCheckout);
+}
+
+updateCompatibilityButtons();
 updateDreamQuotaUI();
 
 window.renderBaziPreview = renderResult;
