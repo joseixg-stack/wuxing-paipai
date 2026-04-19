@@ -2,6 +2,7 @@
 const stepPanels = Array.from(document.querySelectorAll(".step-panel"));
 const form = document.getElementById("bazi-form");
 const directForm = document.getElementById("bazi-direct-form");
+const compatibilityForm = document.getElementById("compatibility-form");
 const prevStepButton = document.getElementById("prev-step");
 const nextStepButton = document.getElementById("next-step");
 const submitStepButton = form ? form.querySelector('button[type="submit"]') : null;
@@ -12,6 +13,7 @@ const modeTabs = Array.from(document.querySelectorAll(".mode-tab"));
 const modePanels = Array.from(document.querySelectorAll(".mode-panel"));
 const formFeedback = document.getElementById("form-feedback");
 const directFormFeedback = document.getElementById("direct-form-feedback");
+const compatibilityFormFeedback = document.getElementById("compatibility-form-feedback");
 const followupSuggestions = document.getElementById("followup-suggestions");
 const followupForm = document.getElementById("followup-form");
 const followupInput = document.getElementById("followup-input");
@@ -38,12 +40,15 @@ const checkoutCancelButton = document.getElementById("checkout-cancel");
 const compatibilityButtons = Array.from(document.querySelectorAll("[data-compatibility-action]"));
 const compatibilityResponse = document.getElementById("compatibility-response");
 const birthdayInput = document.getElementById("birthday-input");
+const birthdayFormatInputs = Array.from(document.querySelectorAll("[data-birthday-format]"));
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
 
 let activeStep = 0;
 let latestResult = null;
 let latestFormData = null;
+let latestCompatibility = null;
+let pendingCompatibilityPayload = null;
 let followupHistory = [];
 let dreamHistory = [];
 let pendingCheckoutService = null;
@@ -326,17 +331,97 @@ function consumeFollowupAccess() {
   return false;
 }
 
+function getPrimaryElement(result) {
+  return result?.theme?.dominantElement || result?.elements?.dominant || "";
+}
+
+function getDayBranch(result) {
+  return result?.pillars?.find((pillar) => pillar.label === "日柱")?.zhi || result?.pillars?.[2]?.zhi || "";
+}
+
+function getElementRelation(leftElement, rightElement) {
+  const generates = { 木: "火", 火: "土", 土: "金", 金: "水", 水: "木" };
+  const controls = { 木: "土", 土: "水", 水: "火", 火: "金", 金: "木" };
+  if (!leftElement || !rightElement) return "两个人的五行关系需要结合完整命盘继续看，不能只凭一个字定合不合。";
+  if (leftElement === rightElement) return `两边主气同为${leftElement}，容易懂对方的节奏，但也容易在同一个点上同时较劲。`;
+  if (generates[leftElement] === rightElement) return `${leftElement}生${rightElement}，更像一方容易先给力、先托住关系，但也要防止付出变成单方面消耗。`;
+  if (generates[rightElement] === leftElement) return `${rightElement}生${leftElement}，对方更容易在某些阶段托住你，但关系里也要看这份支持是不是被好好接住。`;
+  if (controls[leftElement] === rightElement) return `${leftElement}克${rightElement}，不是一定不好，而是相处里更容易出现标准、控制感或谁说了算的问题。`;
+  if (controls[rightElement] === leftElement) return `${rightElement}克${leftElement}，这段关系容易有牵制感，处理得好是互相校正，处理不好就会变成彼此消耗。`;
+  return `两个人主气是${leftElement}与${rightElement}，关系里既有互补，也要看日主和十神怎么接住这股差异。`;
+}
+
+function getBranchRelation(leftBranch, rightBranch) {
+  const clashes = { 子: "午", 丑: "未", 寅: "申", 卯: "酉", 辰: "戌", 巳: "亥" };
+  const harmonies = { 子: "丑", 寅: "亥", 卯: "戌", 辰: "酉", 巳: "申", 午: "未" };
+  if (!leftBranch || !rightBranch) return "日支这一层还需要更完整的出生信息来细看。";
+  if (leftBranch === rightBranch) return `两个人日支同为${leftBranch}，容易在生活习惯或关系期待上有相似处，但相似也会放大彼此的固执。`;
+  if (clashes[leftBranch] === rightBranch || clashes[rightBranch] === leftBranch) {
+    return `${leftBranch}${rightBranch}有冲象，关系不一定差，但容易一靠近就把真实问题推出来，越回避越容易反复。`;
+  }
+  if (harmonies[leftBranch] === rightBranch || harmonies[rightBranch] === leftBranch) {
+    return `${leftBranch}${rightBranch}有合意，说明关系里有互相靠近、愿意接住对方的空间，但仍要看现实节奏能不能跟上。`;
+  }
+  return `日支落在${leftBranch}与${rightBranch}，不是强冲强合的组合，更适合看日常回应、边界和两个人的现实配合度。`;
+}
+
+function getCompatibilityTone(primary, partner) {
+  const primaryTen = primary?.tenGods?.dominant?.[0]?.name || "";
+  const partnerTen = partner?.tenGods?.dominant?.[0]?.name || "";
+  if (primaryTen.includes("印") || partnerTen.includes("印")) {
+    return "这段关系里最要紧的不是谁更会说，而是谁能给出稳定、可信、不过度逼迫的空间。";
+  }
+  if (primaryTen.includes("官") || partnerTen.includes("官") || primaryTen.includes("杀") || partnerTen.includes("杀")) {
+    return "这段关系很容易谈到责任、名分、承诺和现实安排，讲清楚比靠猜更重要。";
+  }
+  if (primaryTen.includes("财") || partnerTen.includes("财")) {
+    return "这段关系会比较在意现实落点，比如钱、时间、生活安排和彼此投入是否对等。";
+  }
+  if (primaryTen.includes("食") || partnerTen.includes("食") || primaryTen.includes("伤") || partnerTen.includes("伤")) {
+    return "这段关系最怕话说不透，情绪和表达如果长期堵着，很容易从小别扭变成大消耗。";
+  }
+  return "这段关系要看两个人是不是能把节奏放到同一条线上，而不是只看一时有没有感觉。";
+}
+
 function renderCompatibilityReading(mode = "free") {
   if (!compatibilityResponse || !latestResult) return;
-  const dayMaster = latestResult.dayMaster?.stem || "日主";
-  const dominant = latestResult.theme?.dominantElement || latestResult.elements?.dominant || "命盘主气";
-  const currentLuck = latestResult.luck?.currentDaYun?.ganzhi || "当前大运";
+  const primary = latestCompatibility?.primary || latestResult;
+  const partner = latestCompatibility?.partner || null;
+  const primaryName = latestCompatibility?.primaryPayload?.name || latestFormData?.name || "你";
+  const partnerName = latestCompatibility?.partnerPayload?.name || "对方";
+  const dayMaster = primary.dayMaster?.stem || "日主";
+  const dominant = getPrimaryElement(primary) || "命盘主气";
+  const currentLuck = primary.luck?.currentDaYun?.ganzhi || "当前大运";
   const isPaid = mode === "paid";
-  compatibilityResponse.innerHTML = `
-    <h5>${isPaid ? "合盘深读已解锁" : "免费合盘体验"}</h5>
-    <p>合盘不是只看“合不合”三个字，而是先看两个人放在一起时，谁更需要回应，谁更容易把压力收在心里。以这张盘为底，${dayMaster}日主会更在意关系里的稳定感；${dominant}偏明显时，容易先看现实是否站得住。</p>
-    <p>${currentLuck}这步运会把关系里的节奏问题推到台前。若要继续细看，可以把对方的生日或四柱补进来，再看两个人是互相托举，还是某一方长期觉得累。</p>
-  `;
+
+  if (partner) {
+    const partnerDayMaster = partner.dayMaster?.stem || "对方日主";
+    const partnerElement = getPrimaryElement(partner) || "对方主气";
+    const elementLine = getElementRelation(dominant, partnerElement);
+    const branchLine = getBranchRelation(getDayBranch(primary), getDayBranch(partner));
+    const toneLine = getCompatibilityTone(primary, partner);
+    const paidLine = isPaid
+      ? `<p>深读时更要看接下来两三年的运势是不是同频：${primaryName}眼下走到${currentLuck}，${partnerName}走到${partner.luck?.currentDaYun?.ganzhi || "当前大运"}。如果一个人想定下来，另一个人还在变动期，就不是没感情，而是节奏需要谈清。</p>`
+      : `<p>免费版先看大方向：如果还想继续细看“谁更容易先退、谁更需要安全感、未来两三年适不适合推进关系”，可以 9.9 解锁合盘深读。</p>`;
+
+    compatibilityResponse.innerHTML = `
+      <h5>${isPaid ? "合盘深读已解锁" : "免费合盘结果"}</h5>
+      <p>${primaryName}是${dayMaster}日主，${partnerName}是${partnerDayMaster}日主。合盘不是一句合不合，而是看两个人的气放在一起，会互相托住，还是会把彼此最紧的地方碰出来。</p>
+      <div class="compatibility-response-grid">
+        <div class="compatibility-mini-card"><strong>五行互动</strong><p>${elementLine}</p></div>
+        <div class="compatibility-mini-card"><strong>日支关系</strong><p>${branchLine}</p></div>
+        <div class="compatibility-mini-card"><strong>相处重点</strong><p>${toneLine}</p></div>
+        <div class="compatibility-mini-card"><strong>现实节奏</strong><p>${currentLuck}这步运会影响${primaryName}对关系稳定感的判断，不能只看当下热不热。</p></div>
+      </div>
+      ${paidLine}
+    `;
+  } else {
+    compatibilityResponse.innerHTML = `
+      <h5>${isPaid ? "合盘深读已解锁" : "免费合盘体验"}</h5>
+      <p>合盘不是只看“合不合”三个字，而是先看两个人放在一起时，谁更需要回应，谁更容易把压力收在心里。以这张盘为底，${dayMaster}日主会更在意关系里的稳定感；${dominant}偏明显时，容易先看现实是否站得住。</p>
+      <p>${currentLuck}这步运会把关系里的节奏问题推到台前。若要继续细看，请在测算页顶部切到“八字合盘”，把对方生日一起填进来。</p>
+    `;
+  }
   compatibilityResponse.classList.remove("is-hidden");
   compatibilityResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -353,9 +438,36 @@ function updateCompatibilityButtons() {
   });
 }
 
+function focusCompatibilityForm() {
+  if (!compatibilityForm) return;
+  setMode("compatibility-mode");
+
+  if (latestFormData) {
+    const fieldMap = {
+      selfName: latestFormData.name || "",
+      selfGender: latestFormData.gender || "female",
+      selfBirthday: latestFormData.birthday || "",
+      selfBirthTime: latestFormData.birthTime || "",
+      selfTimeRange: latestFormData.timeRange || (latestFormData.birthTime ? "exact" : "unknown"),
+      selfBirthplace: latestFormData.birthplace || "",
+    };
+
+    Object.entries(fieldMap).forEach(([name, value]) => {
+      const field = compatibilityForm.elements[name];
+      if (field && !field.value && value) {
+        field.value = name === "selfBirthday" ? formatBirthdayValue(value) : value;
+      }
+    });
+  }
+
+  setFormFeedback(compatibilityForm, "请把对方资料也补上，合盘会重新读取两张盘，不会用单人命盘凑结果。");
+  compatibilityForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function getFeedbackElement(targetForm) {
   if (targetForm === form) return formFeedback;
   if (targetForm === directForm) return directFormFeedback;
+  if (targetForm === compatibilityForm) return compatibilityFormFeedback;
   return null;
 }
 
@@ -379,6 +491,34 @@ function collectFormValues(targetForm) {
   });
 
   return payload;
+}
+
+function buildCompatibilityPersonPayload(values, prefix, fallbackName) {
+  const birthTime = values[`${prefix}BirthTime`] || "";
+  return {
+    name: values[`${prefix}Name`] || fallbackName,
+    gender: values[`${prefix}Gender`] || "female",
+    status: "alive",
+    birthday: values[`${prefix}Birthday`] || "",
+    birthTime,
+    timeRange: birthTime ? "exact" : values[`${prefix}TimeRange`] || "unknown",
+    birthplace: values[`${prefix}Birthplace`] || "",
+    focus: "relationship",
+    horizon: "3",
+  };
+}
+
+async function fetchBaziResult(payload) {
+  const response = await fetch("/api/bazi", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || "排盘失败");
+  }
+  return result;
 }
 
 function syncTimeMode() {
@@ -2324,6 +2464,7 @@ function renderFollowupUpgrade() {
 function renderResult(formData, result) {
   latestFormData = formData;
   latestResult = result;
+  latestCompatibility = null;
   followupHistory = [];
   dreamHistory = [];
   resultEmpty.classList.add("is-hidden");
@@ -2493,6 +2634,10 @@ if (directForm) {
   directForm.addEventListener("submit", (event) => submitForm(event, "/api/bazi-direct"));
 }
 
+if (compatibilityForm) {
+  compatibilityForm.addEventListener("submit", submitCompatibilityForm);
+}
+
 if (modeTabs.length) {
   setMode("profile-mode");
 }
@@ -2552,6 +2697,81 @@ if (followupForm) {
     }
     followupResponse.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
+}
+
+birthdayFormatInputs.forEach((input) => {
+  input.addEventListener("input", () => {
+    input.value = formatBirthdayValue(input.value);
+  });
+  input.addEventListener("blur", () => {
+    input.value = formatBirthdayValue(input.value);
+  });
+});
+
+async function runCompatibilityPayload(values, mode = "free") {
+  if (!compatibilityForm) return;
+  const submitButton = compatibilityForm.querySelector('button[type="submit"]');
+  const originalLabel = submitButton?.textContent || "开始合盘测算";
+  const primaryPayload = buildCompatibilityPersonPayload(values, "self", "你");
+  const partnerPayload = buildCompatibilityPersonPayload(values, "partner", "对方");
+
+  try {
+    setFormFeedback(compatibilityForm, "");
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "合盘中...";
+    }
+
+    const [primaryResult, partnerResult] = await Promise.all([
+      fetchBaziResult(primaryPayload),
+      fetchBaziResult(partnerPayload),
+    ]);
+
+    renderResult(primaryPayload, primaryResult);
+    latestCompatibility = {
+      primary: primaryResult,
+      partner: partnerResult,
+      primaryPayload,
+      partnerPayload,
+    };
+    renderCompatibilityReading(mode);
+    updateCompatibilityButtons();
+    return true;
+  } catch (error) {
+    setFormFeedback(compatibilityForm, error.message || "合盘失败，请检查两个人的生日和出生信息。");
+    return false;
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalLabel;
+    }
+  }
+}
+
+async function submitCompatibilityForm(event) {
+  event.preventDefault();
+  const values = collectFormValues(event.currentTarget);
+
+  if (!hasUsedCompatibilityFree()) {
+    const success = await runCompatibilityPayload(values, "free");
+    if (success) {
+      consumeCompatibilityFree();
+      updateCompatibilityButtons();
+    }
+    return;
+  }
+
+  if (paidUnlocks.compatibility > 0) {
+    const success = await runCompatibilityPayload(values, "paid");
+    if (success) {
+      paidUnlocks.compatibility -= 1;
+    }
+    return;
+  }
+
+  pendingCompatibilityPayload = values;
+  setFormFeedback(compatibilityForm, "免费合盘已经用完。可以 9.9 解锁一次合盘深读，付款后会自动继续生成结果。");
+  openCheckout("compatibility");
 }
 
 if (dreamForm) {
@@ -2628,6 +2848,10 @@ checkoutButtons.forEach((button) => {
 compatibilityButtons.forEach((button) => {
   button.addEventListener("click", () => {
     if (!latestResult || !latestFormData) return;
+    if (!latestCompatibility?.partner) {
+      focusCompatibilityForm();
+      return;
+    }
     if (!hasUsedCompatibilityFree()) {
       consumeCompatibilityFree();
       renderCompatibilityReading("free");
@@ -2657,7 +2881,17 @@ if (checkoutCompleteButton) {
       followupInput.focus();
       followupInput.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } else if (service === "compatibility") {
-      renderCompatibilityReading("paid");
+      if (pendingCompatibilityPayload) {
+        const values = pendingCompatibilityPayload;
+        pendingCompatibilityPayload = null;
+        runCompatibilityPayload(values, "paid").then((success) => {
+          if (success) {
+            paidUnlocks.compatibility = Math.max(0, paidUnlocks.compatibility - 1);
+          }
+        });
+      } else {
+        renderCompatibilityReading("paid");
+      }
     }
   });
 }

@@ -8,7 +8,7 @@
       name="description"
       content="进入五行拍拍开始测算页，按生日排盘或直接输入八字，查看四柱、十神、格局、大运与流年解读。"
     />
-      <link rel="stylesheet" href="./static/styles.css?v=20260419d" />
+      <link rel="stylesheet" href="./static/styles.css?v=20260419e" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -42,6 +42,10 @@
                 <button class="mode-tab" type="button" data-mode-target="bazi-mode">
                   <strong>直接输入八字</strong>
                   <small>适合已经有四柱的人，直接进入命盘阅读与流年分析。</small>
+                </button>
+                <button class="mode-tab" type="button" data-mode-target="compatibility-mode">
+                  <strong>八字合盘</strong>
+                  <small>适合看两个人的相处节奏、关系卡点和长期匹配。</small>
                 </button>
               </div>
 
@@ -247,6 +251,115 @@
                   <p class="soft-copy">如果你已经从别处排好了八字，这里可以直接输入四柱。后续补充阳历生日与出生时间，还能继续细化起运与大运。</p>
                   <button type="submit" class="button primary">按八字直接测算</button>
                   <p class="form-feedback is-hidden" id="direct-form-feedback" role="alert"></p>
+                </form>
+              </div>
+
+              <div class="mode-panel" id="compatibility-mode">
+                <form id="compatibility-form" class="wizard-form compatibility-form">
+                  <div class="compatibility-form-intro">
+                    <span class="upgrade-tag unlock">免费合盘 1 次</span>
+                    <p>先填两个人的出生资料。时间不知道也可以选模糊时段，系统会先看两张盘的日主、五行、夫妻宫、十神和大运节奏。</p>
+                  </div>
+                  <div class="compatibility-person-grid">
+                    <section class="compatibility-person-card">
+                      <h4>你的资料</h4>
+                      <label>
+                        <span>姓名</span>
+                        <input name="selfName" type="text" placeholder="例如：张三" autocomplete="name" required />
+                      </label>
+                      <label>
+                        <span>性别</span>
+                        <select name="selfGender" autocomplete="sex" required>
+                          <option value="female">女</option>
+                          <option value="male">男</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>阳历生日</span>
+                        <input name="selfBirthday" type="text" inputmode="numeric" data-birthday-format placeholder="例如：20010129" required />
+                        <small class="input-hint">也可输入 2001-01-29，会自动识别。</small>
+                      </label>
+                      <label>
+                        <span>出生时间</span>
+                        <input name="selfBirthTime" type="time" autocomplete="off" />
+                      </label>
+                      <label>
+                        <span>时间模糊描述</span>
+                        <select name="selfTimeRange" autocomplete="off">
+                          <option value="exact">已提供精确时间</option>
+                          <option value="late-zi">深夜 23:00-01:00</option>
+                          <option value="chou">凌晨 01:00-03:00</option>
+                          <option value="yin">黎明 03:00-05:00</option>
+                          <option value="mao">早晨 05:00-07:00</option>
+                          <option value="chen">早餐后 07:00-09:00</option>
+                          <option value="si">上午 09:00-11:00</option>
+                          <option value="wu">中午 11:00-13:00</option>
+                          <option value="wei">午后 13:00-15:00</option>
+                          <option value="shen">下午 15:00-17:00</option>
+                          <option value="you">傍晚 17:00-19:00</option>
+                          <option value="early-night">晚上 19:00-21:00</option>
+                          <option value="late-night">晚上 21:00-23:00</option>
+                          <option value="unknown">不确定</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>出生地</span>
+                        <input name="selfBirthplace" type="text" placeholder="例如：上海市" required />
+                      </label>
+                    </section>
+
+                    <section class="compatibility-person-card">
+                      <h4>对方资料</h4>
+                      <label>
+                        <span>姓名</span>
+                        <input name="partnerName" type="text" placeholder="例如：李四" autocomplete="off" required />
+                      </label>
+                      <label>
+                        <span>性别</span>
+                        <select name="partnerGender" autocomplete="sex" required>
+                          <option value="female">女</option>
+                          <option value="male">男</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>阳历生日</span>
+                        <input name="partnerBirthday" type="text" inputmode="numeric" data-birthday-format placeholder="例如：19990808" required />
+                        <small class="input-hint">不知道准确时间也没关系，先选一个最接近的时段。</small>
+                      </label>
+                      <label>
+                        <span>出生时间</span>
+                        <input name="partnerBirthTime" type="time" autocomplete="off" />
+                      </label>
+                      <label>
+                        <span>时间模糊描述</span>
+                        <select name="partnerTimeRange" autocomplete="off">
+                          <option value="exact">已提供精确时间</option>
+                          <option value="late-zi">深夜 23:00-01:00</option>
+                          <option value="chou">凌晨 01:00-03:00</option>
+                          <option value="yin">黎明 03:00-05:00</option>
+                          <option value="mao">早晨 05:00-07:00</option>
+                          <option value="chen">早餐后 07:00-09:00</option>
+                          <option value="si">上午 09:00-11:00</option>
+                          <option value="wu">中午 11:00-13:00</option>
+                          <option value="wei">午后 13:00-15:00</option>
+                          <option value="shen">下午 15:00-17:00</option>
+                          <option value="you">傍晚 17:00-19:00</option>
+                          <option value="early-night">晚上 19:00-21:00</option>
+                          <option value="late-night">晚上 21:00-23:00</option>
+                          <option value="unknown">不确定</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>出生地</span>
+                        <input name="partnerBirthplace" type="text" placeholder="例如：杭州市" required />
+                      </label>
+                    </section>
+                  </div>
+                  <div class="form-actions">
+                    <p class="soft-copy">免费合盘用完后，继续深读为 9.9 / 次。</p>
+                    <button type="submit" class="button primary">开始合盘测算</button>
+                  </div>
+                  <p class="form-feedback is-hidden" id="compatibility-form-feedback" role="alert"></p>
                 </form>
               </div>
             </section>
@@ -551,6 +664,6 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260419d"></script>
+    <script src="./static/calculator.js?v=20260419e"></script>
   </body>
 </html>
