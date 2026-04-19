@@ -26,6 +26,8 @@ const dreamThread = document.getElementById("dream-thread");
 const dreamQuotaNote = document.getElementById("dream-quota-note");
 const dreamFeedback = document.getElementById("dream-feedback");
 const dreamPaywall = document.getElementById("dream-paywall");
+const checkoutCard = document.getElementById("checkout-card");
+const checkoutButtons = Array.from(document.querySelectorAll("[data-checkout-scroll]"));
 const birthdayInput = document.getElementById("birthday-input");
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
@@ -2432,6 +2434,13 @@ dreamUnlockButtons.forEach((button) => {
     if (!dreamInput) return;
     dreamInput.focus();
     dreamInput.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+});
+
+checkoutButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!checkoutCard) return;
+    checkoutCard.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 });
 

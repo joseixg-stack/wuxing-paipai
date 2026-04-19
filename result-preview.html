@@ -8,7 +8,7 @@
       name="description"
       content="五行拍拍结果预览页，用固定示例快速查看命盘结果、温柔解读、神煞、梦境解读与继续问答。"
     />
-    <link rel="stylesheet" href="./static/styles.css?v=20260417e" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260419b" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -221,7 +221,7 @@
                           <h5>今日梦境深读</h5>
                           <p>今天 3 次免费解梦已经用完。如果这个梦还反复挂在心里，可以解锁一次更完整的深读：会把梦里的关键词、醒来后的情绪、当前命盘主题和今天适合先做的事放在一起看。</p>
                         </div>
-                        <button type="button" class="button primary">解锁梦境深读</button>
+                        <button type="button" class="button primary" data-checkout-scroll>解锁梦境深读</button>
                       </section>
                       <section class="dream-response is-hidden" id="dream-response">
                         <div class="followup-response-header">
@@ -250,7 +250,7 @@
                         </div>
                         <div class="compatibility-action">
                           <p>建议先完成自己的命盘，再解锁双方合盘。这样系统会先知道你的关系需求，再去看对方如何与你互动。</p>
-                          <button type="button" class="button primary">解锁合盘深读</button>
+                          <button type="button" class="button primary" data-checkout-scroll>解锁合盘深读</button>
                         </div>
                       </div>
                     </article>
@@ -258,7 +258,7 @@
                     <article class="result-card wide glow-card checkout-card" id="checkout-card">
                       <div class="card-header">
                         <h4>付费解锁说明</h4>
-                        <p>先用轻量收款方式跑通服务。付款后，把命盘信息、订单截图和想看的问题发给客服，就可以继续做深读。</p>
+                        <p>先用人工收款跑通第一版服务。付款后保存截图，回到你看到这个网站的平台私信发送截图、昵称和想看的问题。</p>
                       </div>
                       <div class="checkout-grid">
                         <div class="checkout-plan">
@@ -273,9 +273,15 @@
                         </div>
                         <div class="checkout-note">
                           <strong>收款方式</strong>
-                          <p>当前先用微信/支付宝收款码或人工收款测试付费意愿。你可以把收款码图片放到这里，后续再升级成自动支付。</p>
+                          <p>当前先用微信收款码测试付费意愿。扫码付款后请保存截图，截图就是人工核对订单的凭证。</p>
                           <strong>交付方式</strong>
-                          <p>付款后联系客服，发送订单截图和问题。后续可以接入自动支付与会员系统。</p>
+                          <p>客服第一版就是你本人：用户从小红书、朋友圈、视频号或其他入口看到网站，就回到对应平台私信你。后续可以换成专门客服微信、邮箱或自动支付系统。</p>
+                          <strong>隐私提示</strong>
+                          <p>公开放收款码会展示微信支付里的头像与昵称信息。若后续正式投放，建议换成专门收款号或商户收款码。</p>
+                        </div>
+                        <div class="checkout-qr-card">
+                          <img src="./static/payments/wechat-pay.png" alt="微信收款码" />
+                          <p>付款后请截图，备注想看的服务：梦境深读 / 八字合盘。</p>
                         </div>
                       </div>
                     </article>
@@ -331,7 +337,7 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260419a"></script>
+    <script src="./static/calculator.js?v=20260419b"></script>
     <script>
       const previewFormData = {
         name: "张三",
