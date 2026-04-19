@@ -329,7 +329,7 @@ function consumeFollowupAccess() {
 function renderCompatibilityReading(mode = "free") {
   if (!compatibilityResponse || !latestResult) return;
   const dayMaster = latestResult.dayMaster?.stem || "日主";
-  const dominant = latestResult.elements?.dominant || latestResult.theme?.element || "命盘主气";
+  const dominant = latestResult.theme?.dominantElement || latestResult.elements?.dominant || "命盘主气";
   const currentLuck = latestResult.luck?.currentDaYun?.ganzhi || "当前大运";
   const isPaid = mode === "paid";
   compatibilityResponse.innerHTML = `

@@ -467,6 +467,12 @@ label {
   gap: 8px;
 }
 
+.input-hint {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
 fieldset {
   margin: 0;
   padding: 0;

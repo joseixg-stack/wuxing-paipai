@@ -8,7 +8,7 @@
       name="description"
       content="进入五行拍拍开始测算页，按生日排盘或直接输入八字，查看四柱、十神、格局、大运与流年解读。"
     />
-      <link rel="stylesheet" href="./static/styles.css?v=20260419c" />
+      <link rel="stylesheet" href="./static/styles.css?v=20260419d" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -87,10 +87,11 @@
                         id="birthday-input"
                         type="text"
                         inputmode="numeric"
-                        placeholder="输入生日"
+                        placeholder="例如：20010129"
                         autocomplete="bday"
                         required
                       />
+                      <small class="input-hint">也可以输入 2001-01-29，系统会自动识别；不知道准确时间也可以先选下方的模糊时段。</small>
                     </label>
                     <label>
                       <span>出生时间</span>
@@ -550,6 +551,6 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260419c"></script>
+    <script src="./static/calculator.js?v=20260419d"></script>
   </body>
 </html>
