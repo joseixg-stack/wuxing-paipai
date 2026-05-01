@@ -2,9 +2,11 @@ services:
   - type: web
     name: wuxing-paipai
     runtime: python
+    region: singapore
     plan: free
     buildCommand: ""
     startCommand: python server.py
+    healthCheckPath: /healthz
     envVars:
       - key: HOST
         value: 0.0.0.0

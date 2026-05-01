@@ -8,7 +8,8 @@
       name="description"
       content="五行拍拍结果预览页，用固定示例快速查看命盘结果、温柔解读、神煞、梦境解读与继续问答。"
     />
-    <link rel="stylesheet" href="./static/styles.css?v=20260501a" />
+    <meta name="wxp-api-base" content="" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260501b" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -360,7 +361,8 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260501a"></script>
+    <script src="./static/runtime-config.js?v=20260501b"></script>
+    <script src="./static/calculator.js?v=20260501b"></script>
     <script>
       const previewFormData = {
         name: "张三",
@@ -373,7 +375,16 @@
         time_range: ""
       };
 
-      fetch("./api/bazi", {
+      const runtimeConfig = window.__WXP_CONFIG__ || {};
+      const previewApiBase = (
+        runtimeConfig.apiBaseByHost?.[window.location.hostname] ||
+        runtimeConfig.apiBase ||
+        document.querySelector('meta[name="wxp-api-base"]')?.content ||
+        window.location.origin ||
+        ""
+      ).replace(/\/+$/, "");
+
+      fetch(`${previewApiBase}/api/bazi`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(previewFormData)

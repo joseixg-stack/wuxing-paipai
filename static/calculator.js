@@ -44,6 +44,8 @@ const birthdayFormatInputs = Array.from(document.querySelectorAll("[data-birthda
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
 const draftStatus = document.getElementById("draft-status");
+const apiBaseMeta = document.querySelector('meta[name="wxp-api-base"]');
+const runtimeConfig = window.__WXP_CONFIG__ || {};
 
 let activeStep = 0;
 let latestResult = null;
@@ -94,6 +96,23 @@ const ELEMENT_HINTS = {
 };
 const draftTimers = new WeakMap();
 let draftStatusTimer = null;
+
+function getApiBase() {
+  const hostMappedBase =
+    runtimeConfig.apiBaseByHost && window.location?.hostname
+      ? runtimeConfig.apiBaseByHost[window.location.hostname] || ""
+      : "";
+  const explicitBase = (window.__WXP_API_BASE__ || runtimeConfig.apiBase || apiBaseMeta?.content || hostMappedBase || "").trim();
+  if (explicitBase) {
+    return explicitBase.replace(/\/+$/, "");
+  }
+  return window.location.origin.replace(/\/+$/, "");
+}
+
+function resolveApiUrl(path) {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${getApiBase()}${cleanPath}`;
+}
 
 const CHECKOUT_SERVICES = {
   dream: {
@@ -669,7 +688,7 @@ function buildCompatibilityPersonPayload(values, prefix, fallbackName) {
 }
 
 async function fetchBaziResult(payload) {
-  const response = await fetch("/api/bazi", {
+  const response = await fetch(resolveApiUrl("/api/bazi"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -2951,7 +2970,7 @@ async function submitForm(event, endpoint) {
     submitButton.disabled = true;
     submitButton.textContent = "排盘中...";
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(resolveApiUrl(endpoint), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
