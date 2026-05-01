@@ -43,6 +43,7 @@ const birthdayInput = document.getElementById("birthday-input");
 const birthdayFormatInputs = Array.from(document.querySelectorAll("[data-birthday-format]"));
 const birthTimeInput = document.getElementById("birth-time-input");
 const timeRangeSelect = document.getElementById("time-range-select");
+const draftStatus = document.getElementById("draft-status");
 
 let activeStep = 0;
 let latestResult = null;
@@ -63,24 +64,54 @@ const DREAM_STORAGE_KEY = "wuxing-paipai-dream-quota-v1";
 const FOLLOWUP_DAILY_LIMIT = 1;
 const FOLLOWUP_STORAGE_KEY = "wuxing-paipai-followup-quota-v1";
 const COMPATIBILITY_STORAGE_KEY = "wuxing-paipai-compatibility-free-v1";
+const FORM_DRAFT_KEYS = {
+  "bazi-form": "wuxing-paipai-profile-draft-v2",
+  "bazi-direct-form": "wuxing-paipai-direct-draft-v2",
+  "compatibility-form": "wuxing-paipai-compatibility-draft-v2",
+};
+const MODE_STORAGE_KEY = "wuxing-paipai-active-mode-v1";
+const STEP_STORAGE_KEY = "wuxing-paipai-active-step-v1";
+const ELEMENT_EMOJI = {
+  木: "🌿",
+  火: "🔥",
+  土: "⛰️",
+  金: "✨",
+  水: "🌊",
+};
+const ELEMENT_COLORS = {
+  木: "#92d36e",
+  火: "#ff8b9d",
+  土: "#d9a96b",
+  金: "#b9a7ff",
+  水: "#79bdf2",
+};
+const ELEMENT_HINTS = {
+  木: "要空间感",
+  火: "要点燃感",
+  土: "要落地感",
+  金: "要边界感",
+  水: "要回应感",
+};
+const draftTimers = new WeakMap();
+let draftStatusTimer = null;
 
 const CHECKOUT_SERVICES = {
   dream: {
     title: "解锁梦境深读",
     label: "梦境深读",
-    copy: "适合把一场醒来后还放不下的梦继续看深。会结合梦里最刺的一幕、当下情绪和命盘主题展开。",
+    copy: "适合把一场醒来后还放不下的梦继续看深。会顺着梦里最刺的一幕，把情绪、关系和现实压力一起翻出来。",
     returnText: "支付完成后，会回到梦境解读继续展开。",
   },
   followup: {
     title: "解锁继续追问",
     label: "继续追问",
-    copy: "适合把眼前最在意的问题继续往下问一次。比如关系、事业、财运或时辰校准，都可以围绕刚才的命盘继续看。",
+    copy: "适合把眼前最挂心的那件事继续往下问。会顺着刚才那张盘，把关系、工作、财运或时辰问题往更细的场景里读。",
     returnText: "支付完成后，会回到继续问答继续生成回复。",
   },
   compatibility: {
     title: "解锁合盘深读",
     label: "八字合盘",
-    copy: "适合继续看两个人的相处节奏、关系卡点、长期匹配度和接下来两三年的推进方式。",
+    copy: "适合继续看两个人在关系里谁更敏感、谁更能扛，卡点落在哪里，未来两三年又会怎么推着这段关系走。",
     returnText: "支付完成后，会自动展开合盘深读内容。",
   },
 };
@@ -94,6 +125,133 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function safeStorageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function setDraftStatus(message = "", tone = "saved") {
+  if (!draftStatus) return;
+  if (draftStatusTimer) {
+    clearTimeout(draftStatusTimer);
+    draftStatusTimer = null;
+  }
+  draftStatus.textContent = message;
+  draftStatus.classList.toggle("is-hidden", !message);
+  draftStatus.dataset.tone = message ? tone : "";
+  if (message && tone === "saved") {
+    draftStatusTimer = setTimeout(() => {
+      draftStatus.classList.add("is-hidden");
+      draftStatus.dataset.tone = "";
+    }, 1800);
+  }
+}
+
+function getFormDraftKey(targetForm) {
+  return targetForm?.id ? FORM_DRAFT_KEYS[targetForm.id] : null;
+}
+
+function saveFormDraft(targetForm, options = {}) {
+  const draftKey = getFormDraftKey(targetForm);
+  if (!draftKey) return false;
+
+  const payload = {};
+  const fields = Array.from(targetForm.querySelectorAll("input[name], select[name], textarea[name]"));
+  fields.forEach((field) => {
+    if (field.type === "checkbox") {
+      payload[field.name] = field.checked;
+      return;
+    }
+    if (field.type === "radio") {
+      if (field.checked) payload[field.name] = field.value;
+      return;
+    }
+    payload[field.name] = field.value;
+  });
+
+  const saved = safeStorageSet(draftKey, JSON.stringify(payload));
+  if (saved && !options.silent) {
+    setDraftStatus("已自动保存，下次回来会接着这台设备上的进度继续填。", "saved");
+  }
+  return saved;
+}
+
+function scheduleDraftSave(targetForm) {
+  if (!targetForm) return;
+  const previousTimer = draftTimers.get(targetForm);
+  if (previousTimer) clearTimeout(previousTimer);
+  const nextTimer = setTimeout(() => saveFormDraft(targetForm), 160);
+  draftTimers.set(targetForm, nextTimer);
+}
+
+function restoreFormDraft(targetForm) {
+  const draftKey = getFormDraftKey(targetForm);
+  if (!draftKey) return false;
+  const raw = safeStorageGet(draftKey);
+  if (!raw) return false;
+
+  try {
+    const payload = JSON.parse(raw);
+    let restored = false;
+    const fields = Array.from(targetForm.querySelectorAll("input[name], select[name], textarea[name]"));
+    fields.forEach((field) => {
+      if (!(field.name in payload)) return;
+      const value = payload[field.name];
+      if (field.type === "checkbox") {
+        field.checked = Boolean(value);
+        restored = true;
+        return;
+      }
+      if (field.type === "radio") {
+        field.checked = field.value === value;
+        restored = restored || field.checked;
+        return;
+      }
+      field.value = String(value ?? "");
+      restored = true;
+    });
+    return restored;
+  } catch {
+    return false;
+  }
+}
+
+function bindFormAutosave(targetForm) {
+  if (!targetForm) return;
+  const fields = Array.from(targetForm.querySelectorAll("input[name], select[name], textarea[name]"));
+  fields.forEach((field) => {
+    const handler = () => scheduleDraftSave(targetForm);
+    field.addEventListener("input", handler);
+    field.addEventListener("change", handler);
+  });
+}
+
+function persistInterfaceState(kind, value) {
+  const storageKey = kind === "mode" ? MODE_STORAGE_KEY : STEP_STORAGE_KEY;
+  safeStorageSet(storageKey, String(value));
+}
+
+function readInterfaceState() {
+  const mode = safeStorageGet(MODE_STORAGE_KEY) || "profile-mode";
+  const stepValue = Number(safeStorageGet(STEP_STORAGE_KEY));
+  return {
+    mode,
+    step: Number.isFinite(stepValue) ? stepValue : 0,
+  };
+}
+
 function setDreamFeedback(message = "") {
   if (!dreamFeedback) return;
   dreamFeedback.textContent = message;
@@ -102,6 +260,7 @@ function setDreamFeedback(message = "") {
 
 function setStep(stepIndex) {
   activeStep = Math.max(0, Math.min(stepIndex, stepPanels.length - 1));
+  persistInterfaceState("step", activeStep);
 
   stepButtons.forEach((button, index) => {
     button.classList.toggle("is-active", index === activeStep);
@@ -130,6 +289,7 @@ function setStep(stepIndex) {
 }
 
 function setMode(targetId) {
+  persistInterfaceState("mode", targetId);
   modeTabs.forEach((tab) => {
     const isActive = tab.dataset.modeTarget === targetId;
     tab.classList.toggle("is-active", isActive);
@@ -547,6 +707,172 @@ function setTheme(theme) {
   if (aura[4]) document.documentElement.style.setProperty("--earth", aura[4]);
 }
 
+function getElementTone(element) {
+  return {
+    emoji: ELEMENT_EMOJI[element] || "✨",
+    color: ELEMENT_COLORS[element] || "#9eb8ff",
+    hint: ELEMENT_HINTS[element] || "要顺着感觉",
+  };
+}
+
+function getDominantElement(result) {
+  if (result.theme?.dominantElement) return result.theme.dominantElement;
+  const entries = Object.entries(result.elements || {});
+  if (!entries.length) return "土";
+  return entries.sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function buildArchetypeProfile(result, formData) {
+  const dominantElement = getDominantElement(result);
+  const signature = getChartSignature(result);
+  const favorable = (result.favorableElements || []).join("、");
+  const annualLead = result.annualCards?.[0]?.title || "慢慢把主线推到眼前";
+  const baseMap = {
+    木: {
+      emoji: "🌿",
+      title: "发芽型",
+      line: "需要空间和回应，整个人才会慢慢舒展开。",
+      dayNote: "很多直觉不是冲动，是心里先感到这件事能不能继续长。",
+    },
+    火: {
+      emoji: "🔥",
+      title: "点灯型",
+      line: "一旦遇到能点亮状态的人和事，整张盘会亮得很快。",
+      dayNote: "情绪不是负担，很多时候恰好是这张盘最早亮起来的那层感应。",
+    },
+    土: {
+      emoji: "⛰️",
+      title: "稳场型",
+      line: "先把事情放稳，再慢慢往前推，心里才真正踏实。",
+      dayNote: "很多坚持不是固执，而是心里本来就会先替事情想落点。",
+    },
+    金: {
+      emoji: "✨",
+      title: "定标型",
+      line: "先分清边界和标准，再决定要不要把自己放进去。",
+      dayNote: "看起来安静，其实心里一直在分轻重、挑真假、看值不值。",
+    },
+    水: {
+      emoji: "🌊",
+      title: "感受型",
+      line: "先感到顺不顺，才会慢慢把真实的自己交出来。",
+      dayNote: "很多敏感不是想太多，是环境里的轻重缓急这张盘先收到了。",
+    },
+  };
+  const signatureMap = {
+    "rule-aware": "有分寸，也不喜欢被不讲道理的规则拿住。",
+    "steady-system": "适合在稳定秩序里把价值慢慢抬高。",
+    "sharp-tension": "脑子快、标准高，很多问题一眼就能看出不对。",
+    "output-to-value": "把想法落成结果时，状态最容易发亮。",
+    "guarded-sense": "慢热，但不是迟钝，是先确认靠不靠得住。",
+    "inner-first": "很多答案都不是马上说出来，而是先在心里沉一遍。",
+    "expression-first": "判断和表达会先站出来，适合把灵感变成现实推力。",
+    "practical-first": "做选择时天然会先想值不值、稳不稳、能不能落地。",
+    "balanced-core": "不是单点冲出去的路子，更像慢慢把几层力量揉在一起。",
+  };
+  const stageMap = {
+    木: "这会儿更适合往能长出回应的环境靠。",
+    火: "这会儿更适合靠近能让人有热度和反馈的场。",
+    土: "这会儿更适合先把脚下这步踩稳，再谈加码。",
+    金: "这会儿更适合先把边界说清，事情才会顺。",
+    水: "这会儿更适合先看哪里能让状态松开，再决定往哪走。",
+  };
+  const baseProfile = baseMap[dominantElement] || baseMap["土"];
+
+  return {
+    emoji: baseProfile.emoji,
+    title: baseProfile.title,
+    line: `${baseProfile.line}${favorable ? ` 喜 ${favorable} 的时候，这股气更容易顺起来。` : ""}`,
+    dayNote: `${baseProfile.dayNote}${signatureMap[signature] ? ` ${signatureMap[signature]}` : ""}`,
+    stageNote: `${stageMap[dominantElement] || "先看状态顺不顺，再看结果快不快。"} 眼下被推到前面的主题，更像“${annualLead}”。`,
+    badges: [
+      `${baseProfile.emoji} 主元素${dominantElement}`,
+      favorable ? `喜 ${favorable}` : null,
+      result.dayMaster?.pattern || null,
+      formData.birthplace ? `出生地 ${formData.birthplace}` : null,
+    ].filter(Boolean),
+  };
+}
+
+function buildShareCardCopy(result, formData, archetype) {
+  const dominantElement = getDominantElement(result);
+  const dominantTenGod = result.tenGods?.dominant?.[0]?.name || "";
+  const secondTenGod = result.tenGods?.dominant?.[1]?.name || "";
+  const pattern = result.dayMaster?.pattern || "";
+  const favorable = (result.favorableElements || []).join("、");
+  const currentDaYun = result.luck?.currentDaYun?.ganzhi || result.geju?.label || "现在这步";
+  const annualLead = result.annualCards?.[0]?.title || "慢慢看清眼前重点";
+  const dominantCombo = [dominantTenGod, secondTenGod].filter(Boolean).join("、");
+
+  const quoteMap = {
+    木: [
+      "像春天冒头的枝芽，最怕闷着长，最适合在有回应的地方慢慢舒展。",
+      "木气明显的人，不一定外放，但一旦感到空间够，整个人会亮得很快。",
+    ],
+    火: [
+      "像灯芯被点着，真正重要的不是热闹，而是有没有人事物能把这股亮气接住。",
+      "火气亮的时候，先醒过来的往往是心里的热和敢，不是表面的冲。",
+    ],
+    土: [
+      "像土把万物托住，先安顿，再发力，这张盘顺的时候会有很强的稳定感。",
+      "土气重不是慢，而是心里天然会先想落点，想值不值得长期放进去。",
+    ],
+    金: [
+      "像一把先分轻重的尺，真正厉害的地方不是冷，而是清。",
+      "金气显的人，不会轻易乱接近，先认真假，再决定靠不靠近。",
+    ],
+    水: [
+      "像水先感到温度，很多细微变化还没说出口，这张盘已经先听见了。",
+      "水气明显的人，不一定脆弱，只是对顺不顺、真不真感觉得特别快。",
+    ],
+  };
+
+  const energyMap = {
+    木: "很多决定都不是硬冲，而是先看这件事能不能继续长、会不会把人越带越开。",
+    火: "最像的一点，是一旦心里认定值得，行动和情绪会一起被点起来。",
+    土: "最像的一点，是先想怎么把事情放稳，所以常常比别人更早想到后面。",
+    金: "最像的一点，是心里一直有尺，很多事不会轻易信，也不会随便将就。",
+    水: "最像的一点，是先感到顺不顺，再决定要不要真正把自己交出来。",
+  };
+
+  const momentumMap = {
+    木: `现在这步更像在学“不要把自己缩住”。${currentDaYun}这一步，会把${annualLead}慢慢推到眼前。`,
+    火: `现在这步更像在学“热起来以后，怎么把热度接到现实里”。${currentDaYun}这一步，会把${annualLead}推近。`,
+    土: `现在这步更像在学“稳住不是停住”。${currentDaYun}这一步，会把${annualLead}推出来。`,
+    金: `现在这步更像在学“边界清楚，但别把自己关太紧”。${currentDaYun}这一步，会把${annualLead}抬到前面。`,
+    水: `现在这步更像在学“先把心放顺，再做决定”。${currentDaYun}这一步，会把${annualLead}带到面前。`,
+  };
+
+  const comfortMap = {
+    木: `有空间、有回应、能慢慢长的关系和环境，会最养这张盘。喜 ${favorable} 的时候尤其明显。`,
+    火: `有反馈、有热度、做出去能被接住的场，会让这张盘顺起来。喜 ${favorable} 时更有感觉。`,
+    土: `节奏稳、承诺稳、事情能落地的环境，会最让这张盘安心发力。喜 ${favorable} 时更顺。`,
+    金: `规则清、边界清、人与事都讲分寸的环境，会让这张盘更轻松。喜 ${favorable} 时更稳。`,
+    水: `有回应、有流动、情绪不被压住的环境，会最能托住这张盘。喜 ${favorable} 的时候更松。`,
+  };
+
+  const quoteOptions = quoteMap[dominantElement] || quoteMap["土"];
+  const quote = quoteOptions[pickVariantIndex(`${dominantElement}-${dominantCombo}-${pattern}`, quoteOptions.length)];
+  const title = `${archetype.emoji} ${archetype.title} · ${formData.name || "这张盘"}`;
+  const subtitle = `${formData.name || "这张盘"}更像${archetype.title.replace("型", "")}那一路的人。眼下命盘里更亮的是${dominantCombo || "这组主神"}，气质偏${pattern}。`;
+  const tags = [
+    `${archetype.emoji} 主元素${dominantElement}`,
+    dominantCombo ? `${dominantCombo}` : null,
+    favorable ? `喜 ${favorable}` : null,
+    result.geju?.label || null,
+  ].filter(Boolean);
+
+  return {
+    title,
+    subtitle,
+    quote,
+    energy: energyMap[dominantElement] || energyMap["土"],
+    momentum: momentumMap[dominantElement] || momentumMap["土"],
+    comfort: comfortMap[dominantElement] || comfortMap["土"],
+    tags,
+  };
+}
+
 function getChartSignature(result) {
   const geju = result.geju?.label || "";
   const dominant = result.tenGods?.dominant?.[0]?.name || "";
@@ -589,33 +915,33 @@ function buildHealingGlossary(result) {
   const currentDaYun = result.luck?.currentDaYun?.ganzhi || "";
 
   const baseMap = {
-    "rule-aware": `这张盘不是没主见，而是先把事情在心里过一遍。${dayMaster}落在${geju}里，做决定时会先看规矩到底有没有道理，所以很多时候不是慢，而是不愿意糊里糊涂答应。比如别人一句“先这样吧”，心里也会先把后面会不会失控想一遍。`,
-    "steady-system": `这张盘重的是稳和次序。很多事一上来不会先看热闹，而是先看值不值得长期放进去，所以在别人眼里常常会显得靠谱、能扛、也比较有边界。比如工作里更容易自然接住流程、责任和收尾这类位置。`,
-    "sharp-tension": `这张盘的厉害之处，不在表面强硬，而在心里同时有判断和标准。想法来得快，要求也高，所以真正累人的，常常不是外面拦着，而是心里那把尺先顶上去了。比如一件事还没开始，心里已经在想做到几分才算过关。`,
-    "output-to-value": `这张盘不怕做事，怕的是做了却白做。很多机会都长在表达、执行、把事情做出结果的过程中，所以只要方向对了，越做越容易看到回头钱。比如写出来、讲出来、做成作品，比闷着等更容易出成绩。`,
-    "guarded-sense": `这张盘表面不一定锋利，但里面的防线很清楚。很多事会先看风险，再决定要不要把心力和时间放进去，所以真正让状态松开的，不是催，而是确认感。比如关系里常常要先确认对方说话算数，心里才会慢慢放下那层劲。`,
-    "inner-first": `这张盘先往里走。很多判断不会立刻说出来，而是先在心里慢慢成形，所以真正需要的，不是别人替着下决定，而是给一点时间把那股气理顺。比如表面上看只是安静，心里其实已经把轻重缓急排了好几轮。`,
-    "expression-first": `这张盘的重点在“想法不能闷太久”。很多事一旦看明白，就会想表达、想推进、想把话说透，所以最怕的不是没能力，而是把心里那股劲耗在反复犹豫里。比如明明脑子里已经有答案，却总卡在“要不要现在说”。`,
-    "practical-first": `这张盘更讲实际。很多选择最后都会回到值不值、稳不稳、能不能落地，所以不是不愿意试，而是不想把时间花在一眼就站不住的地方。比如比起热闹机会，更容易被“能不能落到生活里”这件事打动。`,
-    "balanced-core": `这张盘不是只靠一股劲往前冲，而是几层力量一起在推。读这类盘，重点不在一句吉凶，而在先看现在最需要把哪一层想明白。比如同一件事里，会同时想现实安排、关系分寸和自己值不值得。`,
+    "rule-aware": `这张盘不是没主见，而是心里一直有秤。${dayMaster}落在${geju}里，很多决定都会先看规矩到底站不站得住，所以看起来像慢半拍，其实只是不肯随手把自己答应出去。别人一句“先这样吧”，心里往往已经先把后面会不会反复想过一轮。`,
+    "steady-system": `这张盘重的不是笨，而是稳。很多事不会先被热闹带走，而是先看这件事值不值得长期放进去，所以在人群里常常会显得可靠、能扛，也不太随便。放到现实里，就是那种更容易自然接住流程、责任和收尾的人。`,
+    "sharp-tension": `这张盘真正厉害的，不在表面强硬，而在心里那套判断一直亮着。想法来得快，标准也高，所以最累人的往往不是外面有人拦，而是心里那把尺先顶上去了。一件事还没开始，脑子里已经在算：做到几分才算真的过关。`,
+    "output-to-value": `这张盘不怕做事，怕的是做完以后像没留下什么。很多机会都长在表达、执行、把事情做出结果的过程中，所以方向一旦对，越做越容易把价值换成看得见的回响。写出来、讲出来、做成作品，往往都比闷着等更容易出成绩。`,
+    "guarded-sense": `这张盘表面不一定锋利，里面的防线却很清楚。很多事会先看风险，再决定要不要把时间和心力放进去，所以真正让状态松开的，从来不是催，而是确认感。放到关系里，常常要先确认对方说话算数，心里才会慢慢把那层劲放下来。`,
+    "inner-first": `这张盘很多反应都先往心里走。判断不会立刻说出来，而是先在里面慢慢成形，所以真正需要的，不是谁替着下决定，而是给一点时间把那股气理顺。表面看上去只是安静，心里其实已经把轻重缓急排了好几轮。`,
+    "expression-first": `这张盘最怕的，是想法一直闷在里面转。很多事一旦看明白，就会想表达、想推进、想把话说透，所以真正消耗人的，不是没能力，而是心里已经有答案，却反复卡在“现在说会不会太早、太重”。`,
+    "practical-first": `这张盘很讲实际。很多选择最后都会回到值不值、稳不稳、能不能落地，所以不是不愿意试，而是不想把时间放在一眼就站不住的地方。比起热闹机会，更容易被“这件事能不能真正放进生活里”打动。`,
+    "balanced-core": `这张盘不是只靠一股劲往前冲，而是几层力量一起在推。读这类盘，重点从来不是一句吉凶，而是先看眼下到底哪一层最需要被想明白。同一件事里，常常会同时在想现实安排、关系分寸，还有自己到底值不值得继续放进去。`,
   };
 
   const actionMap = {
-    "rule-aware": `眼下更适合先把“什么值得答应、什么不必硬扛”分清。喜用落在${favorable || "顺势的环境"}，意思不是去补运，而是尽量靠近让心里那把尺能放松、能放心发力的环境。`,
+    "rule-aware": `眼下更适合先把“什么值得答应、什么不必硬扛”分清。喜用落在${favorable || "顺势的环境"}，不是让人去迷信补运，而是提醒：尽量靠近那种能让心里那把尺放松、也能安心出力的环境。`,
     "steady-system": `这类盘最见效的做法，不是突然翻盘，而是把节奏调稳。眼下这步${currentDaYun ? `${currentDaYun}大运` : "运势"}推到面前的，多半是现实责任和长期位置，所以先把脚下的路铺平，比急着求快更有用。`,
-    "sharp-tension": `真正要照顾的，是别让“要求高”变成“什么都先顶着”。这类盘最受用的，不是被催着快一点，而是把标准落到一件具体的事上，先做成一个点，再往外扩。`,
+    "sharp-tension": `真正要先照顾的，是别让“要求高”慢慢变成“什么都先顶着”。这类盘最受用的，不是被催着快一点，而是把标准落到一件具体的事上，先做成一个点，再往外扩。`,
     "output-to-value": `这类盘很适合把想法落到看得见的结果里。比起空想方向，眼下更适合抓一件能出作品、出成绩、出回报的事，把那股劲真正换成现实感。`,
     "guarded-sense": `先别急着逼这张盘马上热起来。真正能让状态松开的，是环境先稳、关系先真、事情先看见边界；一旦确认值得，这张盘反而能投入得很深。`,
-    "inner-first": `这类盘最怕被外面的节奏赶着走。眼下更适合先把最卡的一层想清，再决定要不要往前一步；先把心里理顺，比勉强表现得很笃定更有用。`,
-    "expression-first": `这类盘真正会舒服，是想法有出口、判断有落点。眼下最该做的，不是压住自己，而是把表达往更具体、更能换来结果的地方放。`,
+    "inner-first": `这类盘最怕被外面的节奏一路推着走。眼下更适合先把最卡的一层想清，再决定要不要往前一步；先把心里理顺，比勉强表现得很笃定更有用。`,
+    "expression-first": `这类盘真正会舒服，是想法有出口、判断有落点。眼下最该做的，不是把自己越压越闷，而是把表达往更具体、更能换来结果的地方放。`,
     "practical-first": `这类盘最有用的安稳，不是口头安慰，而是现实上少一点空耗。与其反复想，不如先把一件最值钱、最能留住成果的事守住。`,
-    "balanced-core": `这类盘不用急着一下子看完全部。先挑一件眼下最在意的事慢慢看，往往比一下子求一个总答案更容易看进心里。`,
+    "balanced-core": `这类盘不用急着一下子把所有问题都看完。先挑一件眼下最在意的事慢慢看，往往比一下子求一个总答案更容易真正看进心里。`,
   };
 
   const glossary = [];
-  if (geju) glossary.push(`格局可以先当成这张盘的做事骨架。像这里的${geju}，说白了不是术语本身厉害，而是它会让人更偏向某一种处事方式。比如有人先看责任，有人先看表达，有人先看值不值得。`);
-  if (dominant) glossary.push(`十神可以先当成“最常用的反应模式”。眼下更显眼的是${[dominant, second].filter(Boolean).join("、")}，所以很多选择会自然带着这一层习惯。比如偏印重的人会先想透，食伤重的人会先表达，财星重的人会先看值不值。`);
-  if (pattern) glossary.push(`${pattern}不等于好坏，只是在说这张盘此刻是更容易先往前顶，还是更需要外界托一把。`);
+  if (geju) glossary.push(`格局可以先当成这张盘做事的骨架。像这里的${geju}，重点不在术语本身，而在它会让人更自然地偏向某一种处事方式。有人先看责任，有人先看表达，也有人先看值不值得。`);
+  if (dominant) glossary.push(`十神可以先当成“最常用的反应模式”。眼下更显眼的是${[dominant, second].filter(Boolean).join("、")}，所以很多选择都会自然带着这一层习惯。比如偏印重的人会先想透，食伤重的人会先说清，财星重的人会先看落不落地。`);
+  if (pattern) glossary.push(`${pattern}不等于好坏，只是在说这张盘眼下更容易先往前顶，还是更需要外界托一把。看懂这一层，很多焦虑就不会只剩一句“怎么又是我”。`);
 
   return [baseMap[signature], actionMap[signature], ...glossary].filter(Boolean);
 }
@@ -938,13 +1264,22 @@ function renderElements(elements) {
   const maxScore = Math.max(...Object.values(elements), 1);
   container.innerHTML = Object.entries(elements)
     .map(
-      ([element, score]) => `
-        <div class="element-row">
-          <strong>${element}</strong>
+      ([element, score]) => {
+        const tone = getElementTone(element);
+        return `
+        <div class="element-row" style="--element-color:${tone.color}">
+          <div class="element-name">
+            <span class="element-emoji">${tone.emoji}</span>
+            <div>
+              <strong>${element}</strong>
+              <small>${tone.hint}</small>
+            </div>
+          </div>
           <div class="element-bar"><div class="element-fill" style="width:${(score / maxScore) * 100}%"></div></div>
-          <span>${score}</span>
+          <span class="element-score">${score}</span>
         </div>
-      `,
+      `;
+      },
     )
     .join("");
 }
@@ -1657,8 +1992,8 @@ function buildFollowupAnswerV2(question, formData, result) {
     if (kind === "relationship") {
       const variants = [
         "关系能不能走长，通常不是看开始有多热，而是看相处下来心会不会越来越安定。",
-        "问到关系这层，最先要分清的，不是谁更主动，而是谁真正让心里慢慢放得下。",
-        "感情放到这张盘里，重点从来不是表面热闹，而是靠近之后会不会更安心。",
+        "感情真正难的，往往不是没有靠近，而是靠近以后心里那层顾虑有没有退下去。",
+        "把关系放回这张盘里看，重点从来不是表面热闹，而是靠近之后会不会更安心。",
       ];
       return variants[index];
     }
@@ -1666,7 +2001,7 @@ function buildFollowupAnswerV2(question, formData, result) {
     if (kind === "career") {
       const variants = [
         "工作这层最怕看得太表面，很多时候不是机会少，而是位置放得对不对。",
-        "问到事业，先别急着盯结果，真正拉开差别的常常是这股劲该落在哪个位置。",
+        "事业上真正拉开差别的，常常不是拼得多狠，而是这股劲到底落没落在对的位置上。",
         "这张盘看事业，不是先问能不能成，而是先看哪类环境能把长处真正托出来。",
       ];
       return variants[index];
@@ -1675,7 +2010,7 @@ function buildFollowupAnswerV2(question, formData, result) {
     if (kind === "finance") {
       const variants = [
         "钱放进这张盘里，不只是多和少，还要看来得稳不稳、留不留得住。",
-        "财这件事落到命盘里，重点往往不是有没有，而是怎么来、怎么守。",
+        "财这件事落到命盘里，关键往往不是有没有，而是怎么来、怎么守、怎么别白白漏掉。",
         "问到财，不必先盯住数字，更该先看这股财气靠什么方式才接得住。",
       ];
       return variants[index];
@@ -1685,7 +2020,7 @@ function buildFollowupAnswerV2(question, formData, result) {
       const variants = [
         "时辰还不够准的时候，先抓住那些不会变的底色，反而最稳。",
         "出生时间模糊，并不是什么都看不了，先看共性，很多判断照样能站住。",
-        "问到时柱，最重要的不是立刻猜准，而是先把不管哪个时段都不会跑掉的那部分捞出来。",
+        "问到时柱，最重要的不是立刻猜准，而是先把不管落在哪个时段都不会跑掉的那部分捞出来。",
       ];
       return variants[index];
     }
@@ -1748,7 +2083,7 @@ function buildFollowupAnswerV2(question, formData, result) {
     const map = {
       fear: [
         "关系里最磨人的，往往不是外面冷不冷，而是心里一直有一层放不下。",
-        "问到关系里最怕卡住哪里，通常先要看那层迟迟放不下心的地方。",
+        "问到关系里最怕卡住哪里，通常先要看那层一直迟迟放不下心的地方。",
         "这类关系问题，真正卡人的，常常不是没感觉，而是靠近以后那层不安一直还在。",
       ],
       need: [
@@ -1763,7 +2098,7 @@ function buildFollowupAnswerV2(question, formData, result) {
       ],
       default: [
         "感情放回这张盘里，先不急着看热不热，而是先看靠近以后心会不会更安。",
-        "关系这件事落到这张盘上，最先要分清的不是谁更主动，而是谁真正让人放得下心。",
+        "关系这件事落到这张盘上，最先要分清的不是谁更主动，而是谁真的让人放得下心。",
         "这张盘看感情，怕的不是没人靠近，而是靠近以后心里还总有一层顾虑没放下。",
       ],
     };
@@ -1777,7 +2112,7 @@ function buildFollowupAnswerV2(question, formData, result) {
       position: [
         "问到工作位置合不合适，先看的不是体面不体面，而是这股力气放进去会不会越用越顺。",
         "事业里最怕的，不是辛苦，而是明明有本事，却一直放在接不住自己的地方。",
-        "工作适不适合这张盘，先看的是这类位置会不会把判断力和分寸感真正用起来。",
+        "工作适不适合这张盘，先看的是这类位置会不会把判断力、分寸感和做事节奏真正用起来。",
       ],
       change: [
         "问到该不该动，先不要被外面的动静带着走，先看这一步到底是在催守，还是在催变。",
@@ -2476,20 +2811,54 @@ function renderResult(formData, result) {
   const currentDaYun = result.luck.currentDaYun;
   const summaryName = formData.name || "命主";
   const birthSolarText = (result.meta.birthSolar || "").slice(0, 10);
-  const themeText = `主元素 ${result.theme.dominantElement} · 喜 ${favorable}`;
+  const archetype = buildArchetypeProfile(result, formData);
+  const shareCard = buildShareCardCopy(result, formData, archetype);
+  const themeText = `${summaryName}的底色偏${getDominantElement(result)}，这股气更像${archetype.title.replace("型", "")}的人。`;
   const dayMasterText = `${result.dayMaster.stem}${result.dayMaster.element}日主`;
   const summaryContext = isManualBazi
     ? "当前按已输入的四柱来读这张盘"
     : `${birthSolarText}${formData.birthplace ? ` · ${formData.birthplace}` : ""}`;
 
-  document.getElementById("summary-name").textContent = summaryName;
+  document.getElementById("summary-name").textContent = `${archetype.emoji} ${archetype.title}`;
   document.getElementById("summary-theme").textContent = themeText;
+  const summaryBadges = document.getElementById("summary-badges");
+  if (summaryBadges) {
+    summaryBadges.innerHTML = archetype.badges
+      .map((badge) => `<span class="summary-badge">${escapeHtml(badge)}</span>`)
+      .join("");
+  }
   document.getElementById("summary-day-master").textContent = dayMasterText;
-  document.getElementById("summary-lunar").textContent = summaryContext;
+  document.getElementById("summary-lunar").textContent = summaryContext || "这张盘的气息先从日主这层读起。";
+  const summaryDayNote = document.getElementById("summary-day-note");
+  if (summaryDayNote) {
+    summaryDayNote.textContent = archetype.dayNote;
+  }
   document.getElementById("summary-pattern").textContent = currentDaYun ? `${currentDaYun.ganzhi}大运` : result.geju.label;
   document.getElementById("summary-time-note").textContent = isManualBazi
     ? "当前依据：手动输入的四柱八字"
     : `${result.geju.label} · ${result.dayMaster.pattern}`;
+  const summaryStageVibe = document.getElementById("summary-stage-vibe");
+  if (summaryStageVibe) {
+    summaryStageVibe.textContent = archetype.stageNote;
+  }
+  const shareTitle = document.getElementById("share-card-title");
+  const shareSubtitle = document.getElementById("share-card-subtitle");
+  const shareQuote = document.getElementById("share-card-quote");
+  const shareEnergy = document.getElementById("share-card-energy");
+  const shareMomentum = document.getElementById("share-card-momentum");
+  const shareComfort = document.getElementById("share-card-comfort");
+  const shareTags = document.getElementById("share-card-tags");
+  if (shareTitle) shareTitle.textContent = shareCard.title;
+  if (shareSubtitle) shareSubtitle.textContent = shareCard.subtitle;
+  if (shareQuote) shareQuote.textContent = shareCard.quote;
+  if (shareEnergy) shareEnergy.textContent = shareCard.energy;
+  if (shareMomentum) shareMomentum.textContent = shareCard.momentum;
+  if (shareComfort) shareComfort.textContent = shareCard.comfort;
+  if (shareTags) {
+    shareTags.innerHTML = shareCard.tags
+      .map((tag) => `<span class="summary-badge">${escapeHtml(tag)}</span>`)
+      .join("");
+  }
 
   document.getElementById("geju-label").textContent = result.geju.label;
   document.getElementById("geju-summary").textContent = result.geju.summary;
@@ -2625,9 +2994,19 @@ if (nextStepButton) {
   });
 }
 
+const restoredState = readInterfaceState();
+const restoredDraftFlags = [
+  restoreFormDraft(form),
+  restoreFormDraft(directForm),
+  restoreFormDraft(compatibilityForm),
+];
+bindFormAutosave(form);
+bindFormAutosave(directForm);
+bindFormAutosave(compatibilityForm);
+
 if (form) {
   form.addEventListener("submit", (event) => submitForm(event, "/api/bazi"));
-  setStep(0);
+  setStep(restoredState.step || 0);
 }
 
 if (directForm) {
@@ -2639,7 +3018,7 @@ if (compatibilityForm) {
 }
 
 if (modeTabs.length) {
-  setMode("profile-mode");
+  setMode(restoredState.mode || "profile-mode");
 }
 
 if (timeRangeSelect) {
@@ -2655,6 +3034,8 @@ if (birthdayInput) {
   birthdayInput.addEventListener("blur", () => {
     birthdayInput.value = formatBirthdayValue(birthdayInput.value);
   });
+
+  birthdayInput.value = formatBirthdayValue(birthdayInput.value);
 }
 
 if (followupForm) {
@@ -2706,7 +3087,12 @@ birthdayFormatInputs.forEach((input) => {
   input.addEventListener("blur", () => {
     input.value = formatBirthdayValue(input.value);
   });
+  input.value = formatBirthdayValue(input.value);
 });
+
+if (restoredDraftFlags.some(Boolean)) {
+  setDraftStatus("已恢复上次填写内容，只保存在当前这台设备。", "restored");
+}
 
 async function runCompatibilityPayload(values, mode = "free") {
   if (!compatibilityForm) return;

@@ -8,7 +8,7 @@
       name="description"
       content="进入五行拍拍开始测算页，按生日排盘或直接输入八字，查看四柱、十神、格局、大运与流年解读。"
     />
-      <link rel="stylesheet" href="./static/styles.css?v=20260419e" />
+      <link rel="stylesheet" href="./static/styles.css?v=20260501a" />
   </head>
   <body>
     <div class="ambient ambient-a"></div>
@@ -22,7 +22,7 @@
         <section class="page-topbar glow-card" aria-label="page navigation">
           <a class="button ghost" href="./index.html">返回首页</a>
           <div class="page-topbar-copy">
-            <h1>马上就拍拍！</h1>
+            <h1>开始测算</h1>
           </div>
         </section>
 
@@ -30,22 +30,31 @@
           <div class="stacked-workspace">
             <section class="panel form-panel glow-card">
               <div class="panel-header">
-                <h3>命盘资料卡</h3>
-                <p class="soft-copy poetic-copy">理承气行，数从象见。先定其途，再入其盘。</p>
+                <h3>先填资料</h3>
+                <p class="soft-copy poetic-copy">先把出生时间、地点和想看的方向放进来，这张盘才会慢慢开口。</p>
+                <p class="draft-status is-hidden" id="draft-status" aria-live="polite"></p>
+              </div>
+
+              <div class="emoji-sticker-row" aria-hidden="true">
+                <span>🌿 木感</span>
+                <span>🔥 火感</span>
+                <span>⛰️ 土感</span>
+                <span>✨ 金感</span>
+                <span>🌊 水感</span>
               </div>
 
               <div class="mode-switch" aria-label="calculation mode">
                 <button class="mode-tab is-active" type="button" data-mode-target="profile-mode">
-                  <strong>按生日排盘</strong>
-                  <small>适合知道出生日期的人，系统会自动排出四柱与大运。</small>
+                  <strong>🎂 按生日排盘</strong>
+                  <small>适合记得生日的人，系统会先把四柱和大运排出来。</small>
                 </button>
                 <button class="mode-tab" type="button" data-mode-target="bazi-mode">
-                  <strong>直接输入八字</strong>
-                  <small>适合已经有四柱的人，直接进入命盘阅读与流年分析。</small>
+                  <strong>🧭 直接输入八字</strong>
+                  <small>适合已经排好四柱的人，直接从这张盘往下读。</small>
                 </button>
                 <button class="mode-tab" type="button" data-mode-target="compatibility-mode">
-                  <strong>八字合盘</strong>
-                  <small>适合看两个人的相处节奏、关系卡点和长期匹配。</small>
+                  <strong>💞 八字合盘</strong>
+                  <small>适合看两个人靠近之后，会不会越走越顺。</small>
                 </button>
               </div>
 
@@ -375,21 +384,54 @@
               </div>
 
               <div class="result-content is-hidden" id="result-content">
+                <article class="share-card glow-card" id="share-card">
+                  <div class="share-card-top">
+                    <div>
+                      <p class="summary-label">适合截图分享</p>
+                      <h3 id="share-card-title">-</h3>
+                      <p id="share-card-subtitle" class="share-card-subtitle">-</p>
+                    </div>
+                    <div class="share-card-stickers" id="share-card-tags"></div>
+                  </div>
+                  <blockquote class="share-card-quote" id="share-card-quote">-</blockquote>
+                  <div class="share-card-grid">
+                    <section class="share-card-cell">
+                      <span>最像这一点</span>
+                      <p id="share-card-energy">-</p>
+                    </section>
+                    <section class="share-card-cell">
+                      <span>最近正在学</span>
+                      <p id="share-card-momentum">-</p>
+                    </section>
+                    <section class="share-card-cell">
+                      <span>顺起来的条件</span>
+                      <p id="share-card-comfort">-</p>
+                    </section>
+                  </div>
+                  <div class="share-card-footer">
+                    <strong>五行拍拍</strong>
+                    <span>把命盘翻成更容易看懂的话</span>
+                  </div>
+                </article>
+
                 <section class="summary-band">
                   <div class="summary-card glow-card">
-                    <p class="summary-label">命主</p>
+                    <p class="summary-label" id="summary-label-name">命盘原型</p>
                     <h4 id="summary-name">-</h4>
                     <p id="summary-theme" class="summary-subtext">-</p>
+                    <div class="summary-badges" id="summary-badges"></div>
                   </div>
                   <div class="summary-card glow-card">
-                    <p class="summary-label">日主</p>
+                    <p class="summary-label" id="summary-label-day-master">日主气质</p>
                     <h4 id="summary-day-master">-</h4>
                     <p id="summary-lunar" class="summary-subtext">-</p>
+                    <p id="summary-day-note" class="summary-support">-</p>
                   </div>
                   <div class="summary-card glow-card">
-                    <p class="summary-label">当前阶段</p>
+                    <p class="summary-label" id="summary-label-stage">现在这步</p>
                     <h4 id="summary-pattern">-</h4>
                     <p id="summary-time-note" class="summary-subtext">-</p>
+                    <p id="summary-stage-vibe" class="summary-support">-</p>
                   </div>
                 </section>
 
@@ -429,7 +471,7 @@
                 <article class="result-card wide glow-card">
                   <div class="card-header">
                     <h4>你的五行属性</h4>
-                    <p>先看命盘里哪一股气最明显，也看看什么样的环境更能让你舒服展开。</p>
+                    <p>先看哪一股气最显眼。很多舒服不舒服、顺不顺，往往都跟这一层有关。</p>
                   </div>
                   <div id="elements-chart" class="elements-chart"></div>
                 </article>
@@ -437,7 +479,7 @@
                 <article class="result-card wide glow-card featured-reading">
                   <div class="card-header featured-header">
                     <h4>温柔解读</h4>
-                    <p class="poetic-copy">一阴一阳之谓道，顺其气而知其心。</p>
+                    <p class="poetic-copy">先别急着把这张盘看重，先看心里最常绷着的是哪一层。</p>
                   </div>
                   <div class="featured-copy" id="analysis-healing">-</div>
                 </article>
@@ -446,7 +488,7 @@
                   <article class="result-card wide glow-card hero-result-card">
                     <div class="card-header">
                       <h4>四柱与十神</h4>
-                      <p>天道有寒暖，地道有燥湿。四柱既列，命局里的干支、十神与辅助神煞便能一层层看出轻重。这里补的是常用神煞：天乙贵人、文昌贵人、天德贵人、月德贵人、桃花、驿马、华盖、红鸾、天喜。</p>
+                      <p>四柱排开后，性格、关系和做事路数都会慢慢有迹可循。这里也补上常看的神煞，拿来当辅助线索一起读。</p>
                     </div>
                     <div class="table-wrap">
                       <table class="pillars-table">
@@ -462,14 +504,14 @@
                         <tbody id="pillars-body"></tbody>
                       </table>
                     </div>
-                    <p class="soft-copy">神煞可以先当辅助线索来看，比如桃花、红鸾、天喜更偏人缘、关系和缘分场，驿马更偏变动和奔波，天乙、文昌、天德、月德这类更像有人提携、脑子清亮或容易逢到顺手的助力。它们不单独定吉凶，还是要放回整张盘里一起看。不是每一柱都会见到贵人，没有写出来也不代表不好。</p>
+                    <p class="soft-copy">神煞更像给整张盘打侧光。桃花、红鸾、天喜偏人缘和关系气场，驿马偏变动和奔波，天乙、文昌、天德、月德更像有人提携、脑子清亮，或关键时刻容易逢到顺手的助力。它们不单独定吉凶，还是要放回整张盘里一起看；不是每一柱都会见到贵人，没有写出来也不代表不好。</p>
                     <div class="shen-sha-summary" id="shen-sha-summary"></div>
                   </article>
 
                   <article class="result-card glow-card">
                     <div class="card-header">
                       <h4>格局与大运</h4>
-                      <p>这一栏看格局成形的根基，也看当前这步大运把什么主题推到眼前。</p>
+                      <p>格局像这张盘做事的骨架，大运像这几年一直在吹的风。两边一起看，很多问题会更落地。</p>
                     </div>
                     <div class="stacked-meta">
                       <div class="meta-pill">
@@ -488,7 +530,7 @@
                   <article class="result-card glow-card">
                     <div class="card-header">
                       <h4>时辰校准</h4>
-                      <p>差之毫厘，气象有别。若时辰未明，也可先看共性，再慢慢校准。</p>
+                      <p>时间不准也别急，先把不会变的底色看稳，再慢慢缩小时段。</p>
                     </div>
                     <div class="stacked-meta">
                       <div class="meta-pill">
@@ -504,7 +546,7 @@
                   <article class="result-card wide glow-card">
                     <div class="card-header">
                       <h4>十神主题</h4>
-                      <p>这些是命盘里最明显的几股力量，能帮助你更快看懂自己的性格和处事方式。</p>
+                      <p>可以先把十神当成几种常用反应：有人先想透，有人先表达，有人先看值不值得。</p>
                     </div>
                     <div id="ten-gods-grid" class="chip-grid"></div>
                   </article>
@@ -512,7 +554,7 @@
                   <article class="result-card wide glow-card">
                     <div class="card-header">
                       <h4>未来流年卡片</h4>
-                      <p>不用急着把每一年都看成好坏，先看看未来几年最容易被推到眼前的主题。</p>
+                      <p>先看接下来几年会把什么推到台前，不急着一句话分好坏。</p>
                     </div>
                     <div id="annual-cards" class="annual-grid"></div>
                   </article>
@@ -520,19 +562,19 @@
                   <article class="result-card wide glow-card dream-feature-card">
                     <div class="card-header">
                       <h4>梦境解读</h4>
-                      <p>把昨晚的梦放回这张命盘里看。不是单独解梦，而是看这个梦更像在提醒眼下哪一层情绪、关系或现实压力。</p>
+                      <p>梦不是单独拿出来猜吉凶，更像心里有句话白天没说完，晚上换了个画面继续说。</p>
                     </div>
                     <div class="dream-feature-shell">
                       <div class="dream-feature-copy">
-                        <p>这个模块最适合解那些醒来后还留着情绪的梦，比如考试、迟到、赶路、迷路、掉牙、回家、前任、已故亲人、反复追赶这类主题。越能说清楚梦里最刺的一幕，解读会越稳。</p>
+                        <p>这个模块最适合解那种醒来后还黏在心上的梦。越能说清楚梦里最刺的一幕、最重的感觉，解读就越像在对症下药。</p>
                         <div class="upgrade-examples">
-                          <span>示例：梦见考试怎么写也写不完，往往更像在提醒评价压力和责任感。</span>
-                          <span>示例：梦见一直找不到路或反复回家，更像在提醒现实里有件事还没真正落定。</span>
+                          <span>示例：梦见考试怎么写也写不完，常常不是在说考试本身，而是在说“我不能失手”的压力。</span>
+                          <span>示例：梦见一直找路、回家或赶不上车，往往是在提醒：现实里有件事还没真正定下来。</span>
                         </div>
                       </div>
                       <div class="dream-feature-action">
                         <span class="upgrade-tag unlock">每日 1 次免费</span>
-                        <p class="dream-quota-note" id="dream-quota-note">先从一场最在意的梦开始问。</p>
+                        <p class="dream-quota-note" id="dream-quota-note">今天先从最挂心的一场梦开始。</p>
                         <button type="button" class="button secondary dream-button" data-dream-unlock>开始解梦</button>
                       </div>
                     </div>
@@ -572,13 +614,13 @@
                     <article class="result-card wide glow-card compatibility-card">
                       <div class="card-header">
                         <h4>八字合盘</h4>
-                        <p>适合想看两个人的相处节奏、关系卡点和长期匹配度。这里不只看合不合，更看怎么相处才不互相消耗。</p>
+                        <p>想看两个人靠近之后是互相养人，还是越走越累，就从这里开始。</p>
                       </div>
                       <div class="compatibility-shell">
                         <div class="compatibility-copy">
                           <span class="upgrade-tag unlock">免费体验 1 次</span>
                           <h5>关系合盘深读</h5>
-                          <p>把两个人的日主、五行互补、夫妻宫、十神互动和大运节奏放在一起看。适合恋爱、婚姻、暧昧、复合、长期合作关系。</p>
+                          <p>会把两个人的日主、五行、夫妻宫、十神互动和这几年运势放在一起看，不只看合不合，更看怎么相处才不容易互耗。</p>
                           <div class="upgrade-examples">
                             <span>示例：谁更需要安全感，谁更容易先退一步？</span>
                             <span>示例：这段关系是互相滋养，还是容易一方长期消耗？</span>
@@ -586,7 +628,7 @@
                           </div>
                         </div>
                         <div class="compatibility-action">
-                          <p>先用 1 次免费合盘看大方向；如果还想继续细看两个人的卡点和推进节奏，再用 9.9 解锁深读。</p>
+                          <p>先免费看一次关系底色。如果还想继续细看卡点、推进节奏和未来两三年的变化，再用 9.9 往下看。</p>
                           <button type="button" class="button primary" data-compatibility-action>免费体验合盘</button>
                         </div>
                       </div>
@@ -596,7 +638,7 @@
                     <article class="result-card wide glow-card checkout-card is-hidden" id="checkout-card">
                       <div class="card-header">
                         <h4 id="checkout-title">确认解锁</h4>
-                        <p id="checkout-description">扫码完成 9.9 付款后，回到这里点击“我已完成支付”，页面会继续展开对应内容。</p>
+                        <p id="checkout-description">支付完成后，回到这里点“我已完成支付”，对应内容会直接继续展开。</p>
                       </div>
                       <div class="checkout-grid">
                         <div class="checkout-plan">
@@ -606,7 +648,7 @@
                         </div>
                         <div class="checkout-qr-card">
                           <img src="./static/payments/wechat-pay.png" alt="微信收款码" />
-                          <p>请使用微信扫码支付 9.9。当前为测试版收款，支付后点击下方按钮继续查看。</p>
+                          <p>请使用微信扫码支付 9.9。完成后回到这一页继续看，不用重新填写资料。</p>
                           <button type="button" class="button primary" id="checkout-complete">我已完成支付，继续查看</button>
                           <button type="button" class="button ghost" id="checkout-cancel">暂时不解锁</button>
                         </div>
@@ -615,8 +657,8 @@
 
                     <article class="result-card wide glow-card followup-card">
                     <div class="card-header">
-                      <h4>继续问一个问题</h4>
-                      <p>每天 1 次免费追问。超过后可以 9.9 解锁一次继续看。</p>
+                      <h4>继续往下问</h4>
+                      <p>每天 1 次免费追问。想把一个具体问题看深一点，就从这里接着问。</p>
                     </div>
                     <div class="followup-shell">
                       <div class="followup-suggestions" id="followup-suggestions"></div>
@@ -636,8 +678,8 @@
                       </form>
                       <section class="followup-response is-hidden" id="followup-response">
                         <div class="followup-response-header">
-                          <h5>顺着这张命盘继续往下看</h5>
-                          <p>这一栏会记住刚才问到哪，下面也可以继续接着追问。</p>
+                          <h5>刚才问到这里</h5>
+                          <p>这一栏会接着上一个问题往下走，不用每次都从头讲。</p>
                         </div>
                         <div id="followup-thread" class="followup-thread"></div>
                       </section>
@@ -646,7 +688,7 @@
                           <article class="upgrade-card">
                             <span class="upgrade-tag paid">9.9 / 次</span>
                             <h5>继续细看</h5>
-                            <p>今天的免费追问用完后，还可以把问题收窄到一个具体场景继续问。比如“这两年换工作最该避开什么”或“关系里最容易先卡在哪一句话”。</p>
+                            <p>今天的免费追问用完后，还可以把问题收窄到一个具体场景继续往下看。比如“这两年换工作最该避开什么”或“关系里最容易先卡在哪一句话”。</p>
                             <div class="upgrade-examples">
                               <span>示例：这步运最先推到眼前的现实安排是什么？</span>
                               <span>示例：这层关系最怕卡在回应、边界，还是节奏？</span>
@@ -664,6 +706,6 @@
       </main>
     </div>
 
-    <script src="./static/calculator.js?v=20260419e"></script>
+    <script src="./static/calculator.js?v=20260501a"></script>
   </body>
 </html>
