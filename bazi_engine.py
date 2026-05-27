@@ -294,10 +294,19 @@ def _resolve_birth_time(payload: dict[str, Any]) -> BirthTimeChoice:
         hour_text, minute_text = birth_time.split(":")
         return BirthTimeChoice(int(hour_text), int(minute_text), 0, True, "")
 
-    time_range = payload.get("timeRange") or "unknown"
+    time_range = _normalize_time_range(payload)
     hour, minute, note = TIME_RANGE_TO_CLOCK.get(time_range, TIME_RANGE_TO_CLOCK["unknown"])
     exact = time_range not in {"unknown"}
     return BirthTimeChoice(hour, minute, 0, exact, note)
+
+
+def _normalize_time_range(payload: dict[str, Any]) -> str:
+    if (payload.get("birthTime") or "").strip():
+        return "exact"
+    time_range = payload.get("timeRange") or "unknown"
+    if time_range == "exact" or time_range not in TIME_RANGE_TO_CLOCK:
+        return "unknown"
+    return time_range
 
 
 def _get_hour_stem_start(day_stem: str) -> str:
@@ -1018,7 +1027,8 @@ def calculate_bazi(payload: dict[str, Any]) -> dict[str, Any]:
     eight_char = lunar.getEightChar()
     eight_char.setSect(2)
 
-    include_time = payload.get("birthTime") or payload.get("timeRange") not in {"unknown", None, ""}
+    time_range = _normalize_time_range(payload)
+    include_time = bool(payload.get("birthTime")) or time_range != "unknown"
 
     pillars = [
         _pillar_payload(
@@ -1118,7 +1128,7 @@ def calculate_bazi(payload: dict[str, Any]) -> dict[str, Any]:
     natal_branches = [pillar["zhi"] for pillar in pillars if pillar["zhi"]]
     annual_cards = _build_annual_cards(eight_char.getDayGan(), natal_branches, today.year, int(payload.get("horizon", "3")), current_dayun)
     theme = _theme_payload(dominant_element, favorable)
-    time_insight = _build_time_insight(payload, eight_char.getDayGan(), eight_char.getTime(), eight_char.getTimeZhi())
+    time_insight = _build_time_insight({**payload, "timeRange": time_range}, eight_char.getDayGan(), eight_char.getTime(), eight_char.getTimeZhi())
 
     prev_jie = lunar.getPrevJie()
     next_jie = lunar.getNextJie()

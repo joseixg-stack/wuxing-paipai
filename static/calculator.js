@@ -119,19 +119,19 @@ const CHECKOUT_SERVICES = {
     title: "解锁梦境深读",
     label: "梦境深读",
     copy: "适合把一场醒来后还放不下的梦继续看深。会顺着梦里最刺的一幕，把情绪、关系和现实压力一起翻出来。",
-    returnText: "支付完成后，会回到梦境解读继续展开。",
+    returnText: "扫码后回到这里手动确认，会回到梦境解读继续展开。",
   },
   followup: {
     title: "解锁继续追问",
     label: "继续追问",
     copy: "适合把眼前最挂心的那件事继续往下问。会顺着刚才那张盘，把关系、工作、财运或时辰问题往更细的场景里读。",
-    returnText: "支付完成后，会回到继续问答继续生成回复。",
+    returnText: "扫码后回到这里手动确认，会回到继续问答继续生成回复。",
   },
   compatibility: {
     title: "解锁合盘深读",
     label: "八字合盘",
     copy: "适合继续看两个人在关系里谁更敏感、谁更能扛，卡点落在哪里，未来两三年又会怎么推着这段关系走。",
-    returnText: "支付完成后，会自动展开合盘深读内容。",
+    returnText: "扫码后回到这里手动确认，会展开合盘深读内容。",
   },
 };
 
@@ -454,7 +454,7 @@ function updateDreamQuotaUI() {
   }
   if (remaining > 0 || paidUnlocks.dream > 0) {
     dreamQuotaNote.textContent =
-      paidUnlocks.dream > 0 && remaining <= 0 ? "已解锁 1 次梦境深读，可以继续写下这个梦。" : `今日还可免费解梦 ${remaining} 次。`;
+      paidUnlocks.dream > 0 && remaining <= 0 ? "已手动解锁 1 次梦境深读，可以继续写下这个梦。" : `此设备今日还可免费解梦 ${remaining} 次。`;
     if (dreamInput) dreamInput.disabled = false;
     const submitButton = dreamForm.querySelector('button[type="submit"]');
     if (submitButton) {
@@ -462,7 +462,7 @@ function updateDreamQuotaUI() {
       submitButton.textContent = paidUnlocks.dream > 0 && remaining <= 0 ? "继续深读这个梦" : "解读这个梦";
     }
   } else {
-    dreamQuotaNote.textContent = "今日免费解梦已经用完。若这个梦还放不下，可以 9.9 解锁一次梦境深读。";
+    dreamQuotaNote.textContent = "此设备今日免费解梦已经用完。若这个梦还放不下，可以 9.9 手动确认解锁一次梦境深读。";
     if (dreamInput) dreamInput.disabled = true;
     const submitButton = dreamForm.querySelector('button[type="submit"]');
     if (submitButton) {
@@ -568,6 +568,8 @@ function renderCompatibilityReading(mode = "free") {
   const partner = latestCompatibility?.partner || null;
   const primaryName = latestCompatibility?.primaryPayload?.name || latestFormData?.name || "你";
   const partnerName = latestCompatibility?.partnerPayload?.name || "对方";
+  const safePrimaryName = escapeHtml(primaryName);
+  const safePartnerName = escapeHtml(partnerName);
   const dayMaster = primary.dayMaster?.stem || "日主";
   const dominant = getPrimaryElement(primary) || "命盘主气";
   const currentLuck = primary.luck?.currentDaYun?.ganzhi || "当前大运";
@@ -580,17 +582,17 @@ function renderCompatibilityReading(mode = "free") {
     const branchLine = getBranchRelation(getDayBranch(primary), getDayBranch(partner));
     const toneLine = getCompatibilityTone(primary, partner);
     const paidLine = isPaid
-      ? `<p>深读时更要看接下来两三年的运势是不是同频：${primaryName}眼下走到${currentLuck}，${partnerName}走到${partner.luck?.currentDaYun?.ganzhi || "当前大运"}。如果一个人想定下来，另一个人还在变动期，就不是没感情，而是节奏需要谈清。</p>`
-      : `<p>免费版先看大方向：如果还想继续细看“谁更容易先退、谁更需要安全感、未来两三年适不适合推进关系”，可以 9.9 解锁合盘深读。</p>`;
+      ? `<p>深读时更要看接下来两三年的运势是不是同频：${safePrimaryName}眼下走到${currentLuck}，${safePartnerName}走到${partner.luck?.currentDaYun?.ganzhi || "当前大运"}。如果一个人想定下来，另一个人还在变动期，就不是没感情，而是节奏需要谈清。</p>`
+      : `<p>免费版先看大方向：如果还想继续细看“谁更容易先退、谁更需要安全感、未来两三年适不适合推进关系”，可以 9.9 手动确认解锁合盘深读。</p>`;
 
     compatibilityResponse.innerHTML = `
       <h5>${isPaid ? "合盘深读已解锁" : "免费合盘结果"}</h5>
-      <p>${primaryName}是${dayMaster}日主，${partnerName}是${partnerDayMaster}日主。合盘不是一句合不合，而是看两个人的气放在一起，会互相托住，还是会把彼此最紧的地方碰出来。</p>
+      <p>${safePrimaryName}是${dayMaster}日主，${safePartnerName}是${partnerDayMaster}日主。合盘不是一句合不合，而是看两个人的气放在一起，会互相托住，还是会把彼此最紧的地方碰出来。</p>
       <div class="compatibility-response-grid">
         <div class="compatibility-mini-card"><strong>五行互动</strong><p>${elementLine}</p></div>
         <div class="compatibility-mini-card"><strong>日支关系</strong><p>${branchLine}</p></div>
         <div class="compatibility-mini-card"><strong>相处重点</strong><p>${toneLine}</p></div>
-        <div class="compatibility-mini-card"><strong>现实节奏</strong><p>${currentLuck}这步运会影响${primaryName}对关系稳定感的判断，不能只看当下热不热。</p></div>
+        <div class="compatibility-mini-card"><strong>现实节奏</strong><p>${currentLuck}这步运会影响${safePrimaryName}对关系稳定感的判断，不能只看当下热不热。</p></div>
       </div>
       ${paidLine}
     `;
@@ -1203,8 +1205,8 @@ function renderDreamThread() {
     .map(
       (item) => `
         <article class="followup-turn">
-          <p class="turn-question">梦：${item.question}</p>
-          <div class="turn-answer">${item.answer.map((line) => `<p>${line}</p>`).join("")}</div>
+          <p class="turn-question">梦：${escapeHtml(item.question)}</p>
+          <div class="turn-answer">${item.answer.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>
         </article>
       `,
     )
@@ -2801,8 +2803,8 @@ function renderFollowupThread() {
     .map(
       (item) => `
         <article class="followup-turn">
-          <p class="turn-question">问：${item.question}</p>
-          <p class="turn-answer">${item.answer}</p>
+          <p class="turn-question">问：${escapeHtml(item.question)}</p>
+          <p class="turn-answer">${escapeHtml(item.answer)}</p>
         </article>
       `,
     )
@@ -3175,7 +3177,7 @@ async function submitCompatibilityForm(event) {
   }
 
   pendingCompatibilityPayload = values;
-  setFormFeedback(compatibilityForm, "免费合盘已经用完。可以 9.9 解锁一次合盘深读，付款后会自动继续生成结果。");
+  setFormFeedback(compatibilityForm, "此设备免费合盘已经用完。可以 9.9 手动确认解锁一次合盘深读，确认后会继续生成结果。");
   openCheckout("compatibility");
 }
 
@@ -3199,7 +3201,7 @@ if (dreamForm) {
 
     const remaining = getDreamRemaining();
     if (remaining <= 0 && paidUnlocks.dream <= 0) {
-      setDreamFeedback("今日免费解梦已经用完。下面可以 9.9 解锁梦境深读，把这场梦看得更完整。");
+      setDreamFeedback("此设备今日免费解梦已经用完。下面可以 9.9 手动确认解锁梦境深读，把这场梦看得更完整。");
       updateDreamQuotaUI();
       openCheckout("dream");
       return;
@@ -3210,7 +3212,7 @@ if (dreamForm) {
     } else if (paidUnlocks.dream > 0) {
       paidUnlocks.dream -= 1;
     } else {
-      setDreamFeedback("今日免费次数已用完。下面可以 9.9 解锁梦境深读，继续看这场梦真正卡住的地方。");
+      setDreamFeedback("此设备今日免费次数已用完。下面可以 9.9 手动确认解锁梦境深读，继续看这场梦真正卡住的地方。");
       updateDreamQuotaUI();
       openCheckout("dream");
       return;

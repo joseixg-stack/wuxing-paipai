@@ -228,7 +228,7 @@
                         </div>
                       </div>
                       <div class="dream-feature-action">
-                        <span class="upgrade-tag unlock">每日 1 次免费</span>
+                        <span class="upgrade-tag unlock">此设备今日 1 次免费</span>
                         <p class="dream-quota-note" id="dream-quota-note">今天先从最挂心的一场梦开始。</p>
                         <button type="button" class="button secondary dream-button" data-dream-unlock>开始解梦</button>
                       </div>
@@ -253,7 +253,7 @@
                         <div>
                           <span class="upgrade-tag paid">付费解锁</span>
                           <h5>今日梦境深读</h5>
-                          <p>今天的免费解梦已经用完。如果这个梦还反复挂在心里，可以用 9.9 解锁一次更完整的深读。</p>
+                          <p>此设备今天的免费解梦已经用完。如果这个梦还反复挂在心里，可以用 9.9 手动确认解锁一次更完整的深读。</p>
                         </div>
                         <button type="button" class="button primary" data-checkout-scroll data-checkout-service="dream">9.9 解锁梦境深读</button>
                       </section>
@@ -293,7 +293,7 @@
                     <article class="result-card wide glow-card checkout-card is-hidden" id="checkout-card">
                       <div class="card-header">
                         <h4 id="checkout-title">确认解锁</h4>
-                        <p id="checkout-description">支付完成后，回到这里点“我已完成支付”，对应内容会直接继续展开。</p>
+                        <p id="checkout-description">这是手动确认版支付入口。扫码后回到这里确认，对应内容会继续展开。</p>
                       </div>
                       <div class="checkout-grid">
                         <div class="checkout-plan">
@@ -303,8 +303,8 @@
                         </div>
                         <div class="checkout-qr-card">
                           <img src="./static/payments/wechat-pay.png" alt="微信收款码" />
-                          <p>请使用微信扫码支付 9.9。完成后回到这一页继续看，不用重新填写资料。</p>
-                          <button type="button" class="button primary" id="checkout-complete">我已完成支付，继续查看</button>
+                          <p>请使用微信扫码支付 9.9。当前页面不会自动校验支付状态，完成后回到这一页手动确认。</p>
+                          <button type="button" class="button primary" id="checkout-complete">我已扫码支付，继续查看</button>
                           <button type="button" class="button ghost" id="checkout-cancel">暂时不解锁</button>
                         </div>
                       </div>
@@ -313,7 +313,7 @@
                     <article class="result-card wide glow-card followup-card">
                     <div class="card-header">
                       <h4>继续往下问</h4>
-                      <p>每天 1 次免费追问。想把一个具体问题看深一点，就从这里接着问。</p>
+                      <p>此设备每天 1 次免费追问。想把一个具体问题看深一点，就从这里接着问。</p>
                     </div>
                     <div class="followup-shell">
                       <div class="followup-suggestions" id="followup-suggestions"></div>
@@ -367,12 +367,12 @@
       const previewFormData = {
         name: "张三",
         former_name: "没有",
-        gender: "女",
+        gender: "female",
         birthplace: "上海市",
         status: "在世",
         birthday: "2001-01-29",
-        birth_time: "20:00",
-        time_range: ""
+        birthTime: "20:00",
+        timeRange: "exact"
       };
 
       const runtimeConfig = window.__WXP_CONFIG__ || {};
