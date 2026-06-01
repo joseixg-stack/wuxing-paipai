@@ -362,7 +362,7 @@ def _build_time_insight(payload: dict[str, Any], day_stem: str, exact_time_pilla
     candidates = [
         {
             "branch": branch,
-            "pillar": _get_hour_ganzhi(day_stem, branch),
+            "pillar": exact_time_pillar if branch == exact_branch else _get_hour_ganzhi(day_stem, branch),
             "note": "这是该时段可能落入的时柱之一。",
         }
         for branch in branches
