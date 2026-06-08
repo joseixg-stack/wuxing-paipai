@@ -6,6 +6,7 @@ import os
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from bazi_engine import calculate_bazi, calculate_bazi_by_pillars
 
@@ -19,12 +20,16 @@ class AppHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def _route_path(self) -> str:
+        return urlsplit(self.path).path
+
     def do_GET(self) -> None:
-        if self.path == "/":
+        route_path = self._route_path()
+        if route_path == "/":
             self.path = "/index.html"
-        elif self.path in {"/home.html", "/app.html", "/site.html", "/main.html"}:
+        elif route_path in {"/home.html", "/app.html", "/site.html", "/main.html"}:
             self.path = "/index.html"
-        elif self.path == "/healthz":
+        elif route_path == "/healthz":
             body = b"ok"
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
@@ -36,7 +41,8 @@ class AppHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self) -> None:
-        if self.path not in {"/api/bazi", "/api/bazi-direct"}:
+        route_path = self._route_path()
+        if route_path not in {"/api/bazi", "/api/bazi-direct"}:
             self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
             return
 
@@ -44,7 +50,7 @@ class AppHandler(SimpleHTTPRequestHandler):
             content_length = int(self.headers.get("Content-Length", "0"))
             raw = self.rfile.read(content_length)
             payload = json.loads(raw.decode("utf-8"))
-            result = calculate_bazi(payload) if self.path == "/api/bazi" else calculate_bazi_by_pillars(payload)
+            result = calculate_bazi(payload) if route_path == "/api/bazi" else calculate_bazi_by_pillars(payload)
             body = json.dumps(result, ensure_ascii=False).encode("utf-8")
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -62,7 +68,7 @@ class AppHandler(SimpleHTTPRequestHandler):
             self.wfile.write(body)
 
     def do_OPTIONS(self) -> None:
-        if self.path.startswith("/api/"):
+        if self._route_path().startswith("/api/"):
             self.send_response(HTTPStatus.NO_CONTENT)
             self.send_header("Content-Length", "0")
             self.end_headers()
@@ -73,7 +79,7 @@ class AppHandler(SimpleHTTPRequestHandler):
         cache_control = self._cache_control_for_path(self.path)
         if cache_control:
             self.send_header("Cache-Control", cache_control)
-        if self.path.startswith("/api/"):
+        if self._route_path().startswith("/api/"):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")

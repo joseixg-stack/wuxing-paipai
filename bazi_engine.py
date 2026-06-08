@@ -743,6 +743,8 @@ def _validate_pillar(value: str, label: str, required: bool = True) -> str:
         raise ValueError(f"{label}格式不正确，需输入两个汉字，例如：庚辰")
     if value[0] not in VALID_GAN or value[1] not in VALID_ZHI:
         raise ValueError(f"{label}不是有效的干支组合，请输入如：庚辰、己丑、壬辰")
+    if value not in LunarUtil.JIA_ZI:
+        raise ValueError(f"{label}不是有效的干支组合，请输入如：庚辰、己丑、壬辰")
     return value
 
 
@@ -1014,6 +1016,7 @@ def calculate_bazi(payload: dict[str, Any]) -> dict[str, Any]:
     year_text = str(year_num)
     month_text = str(month_num)
     day_text = str(day_num)
+    birth_time_text = (payload.get("birthTime") or "").strip()
     birth_time = _resolve_birth_time(payload)
     solar = Solar.fromYmdHms(
         year_num,
@@ -1028,7 +1031,7 @@ def calculate_bazi(payload: dict[str, Any]) -> dict[str, Any]:
     eight_char.setSect(2)
 
     time_range = _normalize_time_range(payload)
-    include_time = bool(payload.get("birthTime")) or time_range != "unknown"
+    include_time = bool(birth_time_text) or time_range != "unknown"
 
     pillars = [
         _pillar_payload(
@@ -1128,14 +1131,14 @@ def calculate_bazi(payload: dict[str, Any]) -> dict[str, Any]:
     natal_branches = [pillar["zhi"] for pillar in pillars if pillar["zhi"]]
     annual_cards = _build_annual_cards(eight_char.getDayGan(), natal_branches, today.year, int(payload.get("horizon", "3")), current_dayun)
     theme = _theme_payload(dominant_element, favorable)
-    time_insight = _build_time_insight({**payload, "timeRange": time_range}, eight_char.getDayGan(), eight_char.getTime(), eight_char.getTimeZhi())
+    time_insight = _build_time_insight({**payload, "birthTime": birth_time_text, "timeRange": time_range}, eight_char.getDayGan(), eight_char.getTime(), eight_char.getTimeZhi())
 
     prev_jie = lunar.getPrevJie()
     next_jie = lunar.getNextJie()
     return {
         "meta": {
             "sect": 2,
-            "timeExact": birth_time.exact and bool(payload.get("birthTime")),
+            "timeExact": birth_time.exact and bool(birth_time_text),
             "timeNote": birth_time.note,
             "birthSolar": solar.toYmdHms(),
             "birthLunar": lunar.toFullString(),
